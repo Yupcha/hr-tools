@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+/* hrToolkit theme — warm, calm, productivity-focused. */
+@theme {
+  --color-canvas: #faf8f5;
+  --color-surface: #ffffff;
+  --color-soft: #f3efe9;
+  --color-hairline: #e8e2d9;
+  --color-ink: #2b2622;
+  --color-body: #4a443d;
+  --color-muted: #7c746a;
+  --color-faint: #a89f93;
+  --color-coral: #e2643c;
+  --color-coral-soft: #fbe9e2;
+  --color-teal: #2f8f83;
+  --color-mint: #3da57f;
+  --color-ochre: #c8902a;
+  --color-sky: #3a7bd5;
+
+  --radius-yc: 0.85rem;
+
+  --font-sans: "SUSE", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-body);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden; /* app shell scrolls internally */
+}
+
+/* thin scrollbars */
+.scroll::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+.scroll::-webkit-scrollbar-thumb {
+  background: var(--color-hairline);
+  border-radius: 9px;
+}
+.scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--color-faint);
+}
+
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+/* Print: only the .printable document survives, everything else hidden. */
+@media print {
+  body {
+    overflow: visible;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .printable {
+    position: absolute !important;
+    inset: 0 !important;
+    margin: 0 !important;
+    padding: 12mm 14mm !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    background: #fff !important;
+    color: #000 !important;
+    font-size: 13px !important;
+    white-space: pre-wrap !important;
+  }
+  @page {
+    size: A4;
+    margin: 0;
+  }
+}

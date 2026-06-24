@@ -1,0 +1,28 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e9744d"/>
+      <stop offset="1" stop-color="#c84d28"/>
+    </linearGradient>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="18" stdDeviation="26" flood-color="#7a2f17" flood-opacity="0.28"/>
+    </filter>
+  </defs>
+
+  <!-- App tile -->
+  <rect x="0" y="0" width="1024" height="1024" rx="232" fill="url(#bg)"/>
+
+  <!-- Document card -->
+  <g filter="url(#soft)">
+    <rect x="286" y="226" width="452" height="572" rx="48" fill="#ffffff"/>
+  </g>
+
+  <!-- Text lines -->
+  <rect x="356" y="346" width="312" height="46" rx="23" fill="#e2643c"/>
+  <rect x="356" y="446" width="312" height="46" rx="23" fill="#f0c9bb"/>
+  <rect x="356" y="546" width="206" height="46" rx="23" fill="#f0c9bb"/>
+
+  <!-- Check badge -->
+  <circle cx="712" cy="712" r="104" fill="#2f8f83" stroke="#ffffff" stroke-width="16"/>
+  <path d="M668 712 l30 32 l60 -70" fill="none" stroke="#ffffff" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
