@@ -56,15 +56,21 @@ without sign-ups or subscriptions.
 
 Grab the latest build for your OS from the [**Releases**](https://github.com/Yupcha/hr-tools/releases) page:
 
-| OS | File |
+| Platform | File |
 | --- | --- |
 | **macOS** | `.dmg` (Apple Silicon & Intel) |
 | **Windows** | `.msi` / `.exe` |
 | **Linux** | `.AppImage` / `.deb` |
+| **Android** | `.apk` (sideload) — *early / experimental, see below* |
 
-> **Heads-up — the app is unsigned** (no paid code-signing certificate yet), so your OS may warn on first launch:
+> **Heads-up — the apps are unsigned** (no paid code-signing certificate yet), so your OS may warn on first launch:
 > - **macOS:** right-click the app → **Open** → **Open** (or `System Settings → Privacy & Security → Open Anyway`).
 > - **Windows:** **More info** → **Run anyway** on the SmartScreen prompt.
+> - **Android:** enable **Install unknown apps** for your browser/file manager, then open the `.apk`.
+>
+> ⚠️ **Android is experimental.** The UI is currently optimised for desktop, so on a
+> phone it will feel cramped until a mobile-responsive pass lands. It installs and runs,
+> but desktop is the recommended experience for now.
 >
 > It's safe — the source is right here and the app is **offline by default** (the only optional network path is opt-in [AI Assist](#-ai-assist--agentic-use-optional)). Prefer to build it yourself? See [Develop](#-develop).
 

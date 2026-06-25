@@ -1,14 +1,24 @@
 name: Release
 
-# Build native desktop bundles when a version tag is pushed (e.g. v0.1.0),
-# and attach them to a GitHub Release.
+# Build installers for every desktop platform + an Android APK when a version
+# tag is pushed (e.g. v0.1.0), and attach them to a draft GitHub Release.
+# Can also be re-run manually from the Actions tab (workflow_dispatch).
 on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to build & attach artifacts to (e.g. v0.1.0)"
+        required: true
+
+env:
+  TAG: ${{ github.event.inputs.tag || github.ref_name }}
 
 jobs:
-  release:
+  # ── Desktop: macOS (arm64 + x64), Linux, Windows ──────────────────────────
+  desktop:
     permissions:
       contents: write
     strategy:
@@ -23,7 +33,6 @@ jobs:
             args: ""
           - platform: windows-latest
             args: ""
-
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
@@ -52,8 +61,69 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: "hrToolkit ${{ github.ref_name }}"
+          tagName: ${{ env.TAG }}
+          releaseName: "hrToolkit ${{ env.TAG }}"
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
+
+  # ── Mobile: Android APK ───────────────────────────────────────────────────
+  # The Android project (gen/android) is generated fresh in CI. The APK is a
+  # debug-signed, installable sideload build — no keystore secrets required.
+  # For Play Store / stable cross-version update signing, add your own keystore
+  # (see the commented "release signing" notes below).
+  android:
+    needs: desktop
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install Android NDK
+        run: |
+          sdkmanager "ndk;27.1.12297006" "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+          echo "NDK_HOME=$ANDROID_HOME/ndk/27.1.12297006" >> "$GITHUB_ENV"
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/27.1.12297006" >> "$GITHUB_ENV"
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+
+      - run: bun install --frozen-lockfile
+
+      - name: Initialize Android project
+        run: bun run tauri android init
+
+      - name: Build APK (debug-signed, installable)
+        run: bun run tauri android build --apk --debug
+
+      - name: Collect APK
+        id: apk
+        run: |
+          APK=$(find src-tauri/gen/android -name "*.apk" | head -n 1)
+          if [ -z "$APK" ]; then echo "::error::No APK produced"; exit 1; fi
+          OUT="hrToolkit-${TAG}-android.apk"
+          cp "$APK" "$OUT"
+          echo "path=$OUT" >> "$GITHUB_OUTPUT"
+          ls -la "$OUT"
+
+      - name: Attach APK to the release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "$TAG" "${{ steps.apk.outputs.path }}" --clobber
