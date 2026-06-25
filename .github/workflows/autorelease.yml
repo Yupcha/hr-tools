@@ -94,7 +94,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ needs.version.outputs.tag }}
-          releaseName: "hrToolkit ${{ needs.version.outputs.tag }}"
+          releaseName: "hr-tools ${{ needs.version.outputs.tag }}"
           releaseBody: "Automated release from `main`. Built from commit ${{ github.sha }}."
           releaseDraft: false
           prerelease: false
@@ -150,7 +150,7 @@ jobs:
         run: |
           keytool -genkeypair -v -keystore keystore.jks -keyalg RSA -keysize 2048 \
             -validity 10000 -alias hrtoolkit -storepass "$KS_PASS" -keypass "$KS_PASS" \
-            -dname "CN=hrToolkit, O=Yupcha, C=US"
+            -dname "CN=hr-tools, O=Yupcha, C=US"
 
       - name: Build release APK (stripped & optimised)
         run: bun run tauri android build --apk
@@ -169,7 +169,7 @@ jobs:
           "$BT/zipalign" -f -p 4 "$RAW" aligned.apk
           "$BT/apksigner" sign --ks "$KS" --ks-pass "pass:$KS_PASS" --ks-key-alias hrtoolkit aligned.apk
           "$BT/apksigner" verify --verbose aligned.apk
-          OUT="hrToolkit-${{ needs.version.outputs.tag }}-android.apk"
+          OUT="hr-tools-${{ needs.version.outputs.tag }}-android.apk"
           mv aligned.apk "$OUT"
           echo "path=$OUT" >> "$GITHUB_OUTPUT"
 
