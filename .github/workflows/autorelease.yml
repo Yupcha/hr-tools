@@ -1,0 +1,179 @@
+name: Auto release (on merge to main)
+
+# Your flow: PR → CI (ci.yml) verifies it → merge to main → THIS workflow ships
+# a new version. Each merge builds every platform binary + a signed Android APK
+# and publishes a fresh release vX.Y.<build>.
+#
+# Versioning: major.minor come from package.json; the patch is this workflow's
+# run number, so each merge auto-increments (v0.1.1, v0.1.2, …). Bump the
+# major/minor by editing package.json's version in a PR. The version is injected
+# into the build (scripts/set-version.mjs) — nothing is committed back to main,
+# so this works even when main is branch-protected.
+#
+# 💸 COST: a full run builds macOS (×2, billed 10×), Windows, Linux and Android
+# on EVERY merge (~200 billable minutes). If that's too much, the cheapest lever
+# is to drop the `android` job, or gate this workflow on a commit-message marker
+# / a schedule. Docs-only merges are skipped (paths-ignore); `[skip ci]` works too.
+#
+# (release.yml still handles explicit, hand-pushed `v*` tags for special releases.)
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+      - "LICENSE"
+      - ".github/ISSUE_TEMPLATE/**"
+  workflow_dispatch:
+
+# Don't cancel an in-flight release; let each one finish.
+concurrency:
+  group: autorelease
+  cancel-in-progress: false
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      tag: ${{ steps.v.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: v
+        run: |
+          BASE=$(node -p "require('./package.json').version.split('.').slice(0,2).join('.')")
+          V="$BASE.${{ github.run_number }}"
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "tag=v$V" >> "$GITHUB_OUTPUT"
+          echo "Releasing v$V"
+
+  # ── Desktop: macOS (arm64 + x64), Linux, Windows ──────────────────────────
+  desktop:
+    needs: version
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { platform: macos-latest, args: "--target aarch64-apple-darwin" }
+          - { platform: macos-latest, args: "--target x86_64-apple-darwin" }
+          - { platform: ubuntu-22.04, args: "" }
+          - { platform: windows-latest, args: "" }
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Stamp version
+        shell: bash
+        run: node scripts/set-version.mjs "${{ needs.version.outputs.version }}"
+
+      - name: Install Linux dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+
+      - run: bun install --frozen-lockfile
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ needs.version.outputs.tag }}
+          releaseName: "hrToolkit ${{ needs.version.outputs.tag }}"
+          releaseBody: "Automated release from `main`. Built from commit ${{ github.sha }}."
+          releaseDraft: false
+          prerelease: false
+          args: ${{ matrix.args }}
+
+  # ── Mobile: signed Android APK ────────────────────────────────────────────
+  android:
+    needs: [version, desktop]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Stamp version
+        shell: bash
+        run: node scripts/set-version.mjs "${{ needs.version.outputs.version }}"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install Android NDK
+        run: |
+          sdkmanager "ndk;27.1.12297006" "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+          echo "NDK_HOME=$ANDROID_HOME/ndk/27.1.12297006" >> "$GITHUB_ENV"
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/27.1.12297006" >> "$GITHUB_ENV"
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+
+      - run: bun install --frozen-lockfile
+
+      - name: Initialize Android project
+        run: bun run tauri android init
+
+      - name: Generate signing keystore
+        working-directory: src-tauri/gen/android
+        env:
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD || 'hrtoolkit-sideload' }}
+        run: |
+          keytool -genkeypair -v -keystore keystore.jks -keyalg RSA -keysize 2048 \
+            -validity 10000 -alias hrtoolkit -storepass "$KS_PASS" -keypass "$KS_PASS" \
+            -dname "CN=hrToolkit, O=Yupcha, C=US"
+
+      - name: Build release APK (stripped & optimised)
+        run: bun run tauri android build --apk
+
+      - name: Sign & collect APK
+        id: apk
+        env:
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD || 'hrtoolkit-sideload' }}
+        run: |
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)
+          KS="$PWD/src-tauri/gen/android/keystore.jks"
+          RAW=$(find src-tauri/gen/android -name "*release*.apk" | head -n 1)
+          [ -z "$RAW" ] && RAW=$(find src-tauri/gen/android -name "*.apk" | head -n 1)
+          if [ -z "$RAW" ]; then echo "::error::No APK produced"; exit 1; fi
+          echo "raw APK: $RAW ($(du -h "$RAW" | cut -f1))"
+          "$BT/zipalign" -f -p 4 "$RAW" aligned.apk
+          "$BT/apksigner" sign --ks "$KS" --ks-pass "pass:$KS_PASS" --ks-key-alias hrtoolkit aligned.apk
+          "$BT/apksigner" verify --verbose aligned.apk
+          OUT="hrToolkit-${{ needs.version.outputs.tag }}-android.apk"
+          mv aligned.apk "$OUT"
+          echo "path=$OUT" >> "$GITHUB_OUTPUT"
+
+      - name: Attach APK to the release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "${{ needs.version.outputs.tag }}" "${{ steps.apk.outputs.path }}" --clobber
