@@ -2,9 +2,9 @@
 name = "hrtoolkit"
 version = "0.1.0"
 description = "Free, offline desktop toolkit for recruiters, HR teams and teachers."
-authors = ["debpalash"]
+authors = ["Yupcha"]
 license = "MIT"
-repository = "https://github.com/debpalash/hrtoolkit"
+repository = "https://github.com/Yupcha/hr-tools"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

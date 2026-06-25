@@ -4,12 +4,27 @@
   "version": "0.1.0",
   "description": "Free, open-source desktop toolkit for busy recruiters, HR teams and teachers — letters, HR emails, payslips, region-aware payroll calculators and classroom tools, fully offline.",
   "license": "MIT",
-  "author": "debpalash",
-  "homepage": "https://github.com/debpalash/hrtoolkit",
+  "author": "Yupcha",
+  "homepage": "https://github.com/Yupcha/hr-tools",
   "repository": {
     "type": "git",
-    "url": "https://github.com/debpalash/hrtoolkit.git"
+    "url": "https://github.com/Yupcha/hr-tools.git"
   },
+  "bugs": {
+    "url": "https://github.com/Yupcha/hr-tools/issues"
+  },
+  "keywords": [
+    "hr",
+    "human-resources",
+    "payroll",
+    "salary-calculator",
+    "offer-letter-generator",
+    "hr-templates",
+    "offline",
+    "tauri",
+    "desktop-app",
+    "recruiting"
+  ],
   "type": "module",
   "scripts": {
     "dev": "vite",

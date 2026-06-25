@@ -3,7 +3,7 @@
 ## Reporting a vulnerability
 
 If you find a security issue, please **do not open a public issue**. Instead, use
-GitHub's [private vulnerability reporting](https://github.com/debpalash/hrtoolkit/security/advisories/new)
+GitHub's [private vulnerability reporting](https://github.com/Yupcha/hr-tools/security/advisories/new)
 (Security → Report a vulnerability) so it can be fixed before disclosure.
 
 Please include: what the issue is, how to reproduce it, and the impact. We aim to
