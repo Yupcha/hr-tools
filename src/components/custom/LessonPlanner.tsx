@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { getIcon } from "../../lib/icons";
 import { cn } from "../../lib/useLocalStorage";
+import { exportMonoPdf } from "../../lib/pdf";
 
 const toMin = (hhmm: string) => {
   const [h, m] = hhmm.split(":").map(Number);
@@ -46,6 +47,15 @@ export default function LessonPlanner() {
 
   const endTime = slots.length ? slots[slots.length - 1].end : toMin(start);
   const Printer = getIcon("Printer");
+
+  const savePdf = () => {
+    const width = Math.max(...slots.map((s) => s.label.length), 12);
+    const body =
+      "Daily Timetable\n\n" +
+      slots.map((s) => `${s.label.padEnd(width + 3)}${fmt(s.start)} – ${fmt(s.end)}`).join("\n") +
+      `\n\nDay ends at ${fmt(endTime)}`;
+    exportMonoPdf("Daily Timetable", body);
+  };
   const numField = "w-full rounded-yc border border-hairline bg-canvas px-3 py-2 text-[13px] text-ink outline-none focus:border-coral focus:bg-surface focus:ring-4 focus:ring-coral/10";
 
   const Num = ({ label, value, set, min = 0 }: { label: string; value: number; set: (n: number) => void; min?: number }) => (
@@ -76,7 +86,7 @@ export default function LessonPlanner() {
       <div className="space-y-3">
         <div className="no-print flex items-center justify-between">
           <span className="text-[13px] text-muted">Ends at <strong className="text-ink">{fmt(endTime)}</strong></span>
-          <button onClick={() => window.print()} className="inline-flex items-center gap-1.5 rounded-yc bg-coral px-3.5 py-2 text-[12px] font-semibold text-white hover:opacity-90">
+          <button onClick={savePdf} className="inline-flex items-center gap-1.5 rounded-yc bg-coral px-3.5 py-2 text-[12px] font-semibold text-white hover:opacity-90">
             <Printer size={15} /> Save PDF
           </button>
         </div>

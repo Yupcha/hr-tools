@@ -10,6 +10,16 @@ import type { RegionId } from "../lib/regions";
 
 export type ToolKind = "template" | "calculator" | "custom";
 
+/**
+ * Emotional register (F4) — the *tone of the moment*, not the document tone.
+ *   • "warm"    → a happy moment (offers, welcomes): a small, tasteful warmth.
+ *   • "careful" → a sensitive moment (exit, termination, relieving, rejection):
+ *                 the view renders quieter and adds a "handle with care" checklist.
+ *   • undefined → neutral, no change.
+ * Styling is token-only so both themes work automatically.
+ */
+export type Register = "warm" | "careful";
+
 export interface Tool {
   id: string;
   title: string;
@@ -19,6 +29,8 @@ export interface Tool {
   region?: RegionId;
   audience?: "hr" | "teacher" | "all";
   keywords?: string;
+  /** Emotional register of this moment (F4). Set centrally from REGISTER below. */
+  register?: Register;
 }
 
 export interface NavGroup {
@@ -47,7 +59,7 @@ const CALC_META: Record<string, Omit<Tool, "id" | "kind">> = {
   "us-paycheck": { title: "US Paycheck", description: "Net per paycheck after federal tax, FICA and state.", icon: "DollarSign", region: "US", audience: "hr" },
   "uk-take-home": { title: "UK Take-Home", description: "Net pay after Income Tax and National Insurance.", icon: "PoundSterling", region: "UK", audience: "hr" },
   "uae-gratuity": { title: "UAE End-of-Service", description: "Gratuity under UAE Labour Law (21/30 days rule).", icon: "Coins", region: "AE", audience: "hr" },
-  "ksa-gratuity": { title: "Saudi End-of-Service", description: "KSA end-of-service award with resignation rules.", icon: "Coins", region: "AE", audience: "hr" },
+  "ksa-gratuity": { title: "Saudi End-of-Service", description: "KSA end-of-service award with resignation rules.", icon: "Coins", region: "SA", audience: "hr" },
   "nigeria-paye": { title: "Nigeria PAYE", description: "Net income after PAYE tax and pension relief.", icon: "Banknote", region: "NG", audience: "hr" },
   "south-africa-paye": { title: "South Africa PAYE", description: "Net pay after SARS brackets, rebates and UIF.", icon: "Banknote", region: "ZA", audience: "hr" },
 
@@ -69,6 +81,8 @@ const CUSTOM: Tool[] = [
   { id: "password-generator", kind: "custom", title: "Password Generator", description: "Strong offline passwords for new-hire accounts.", icon: "KeyRound", audience: "all", keywords: "secure random credentials" },
   { id: "lesson-planner", kind: "custom", title: "Lesson Timetable", description: "Build a class day's period schedule with breaks and lunch.", icon: "CalendarRange", audience: "teacher", keywords: "schedule periods bell timetable" },
   { id: "seating-plan", kind: "custom", title: "Seating Plan", description: "Generate and shuffle a classroom seating chart you can print.", icon: "LayoutGrid", audience: "teacher", keywords: "classroom chart students random" },
+  { id: "profiles", kind: "custom", title: "Saved Profiles", description: "Save companies & people once, then auto-fill them across every letter, email and payslip.", icon: "Users", audience: "all", keywords: "company employee candidate address book autofill contacts directory" },
+  { id: "ai-settings", kind: "custom", title: "AI Assist", description: "Optional AI drafting — a local model (Ollama) or your own Anthropic key. Off by default; the app stays offline until you enable it.", icon: "Sparkles", audience: "all", keywords: "ai llm claude ollama llama draft autofill assistant settings optional offline byok" },
 ];
 
 /* ── Build template tools from the registry, grouped by tab + category ── */
@@ -93,6 +107,12 @@ const calcTool = (id: string): Tool => ({ id, kind: "calculator", ...CALC_META[i
 
 /* ── Navigation groups (order defines the sidebar) ── */
 export const NAV: NavGroup[] = [
+  {
+    id: "workspace",
+    label: "My Workspace",
+    icon: "Users",
+    tools: [CUSTOM[6], CUSTOM[7]], // Saved Profiles + AI Assist (optional)
+  },
   {
     id: "letters",
     label: "Letters & Documents",
@@ -164,6 +184,62 @@ export const TOOL_BY_ID: Record<string, Tool> = Object.fromEntries(
 export const GROUP_BY_TOOL: Record<string, NavGroup> = Object.fromEntries(
   NAV.flatMap((g) => g.tools.map((t) => [t.id, g])),
 );
+
+/* ── Emotional register (F4) ──────────────────────────────────────────────
+ * Central, data-driven map of which moments carry warmth or need care. We tag
+ * the existing Tool objects in place (single source of truth, no new tool
+ * entries, every tool stays reachable). NAV / ALL_TOOLS / TOOL_BY_ID are
+ * unchanged in shape and membership — only an optional `register` is added. */
+const REGISTER: Record<string, Register> = {
+  // Warm — happy lifecycle moments get a small, tasteful warmth.
+  "offer-letter": "warm",
+  "conditional-offer-letter": "warm",
+  "intent-to-hire-letter": "warm",
+  "offer-follow-up": "warm",
+  "welcome-letter": "warm",
+  "new-hire-announcement": "warm",
+  "probation-confirmation": "warm",
+  // Careful — sensitive moments render quieter, with a "handle with care" list.
+  "termination-letter": "careful",
+  "resignation-acceptance": "careful",
+  "relieving-letter": "careful",
+  "experience-letter": "careful",
+  "rejection-email": "careful",
+};
+for (const [id, r] of Object.entries(REGISTER)) {
+  const t = TOOL_BY_ID[id];
+  if (t) t.register = r;
+}
+
+/** Brief "handle with care" checklists for the most sensitive exit moments.
+ *  In-session only (ticks live in the component), never persisted. */
+export const CARE_CHECKLISTS: Record<string, string[]> = {
+  "termination-letter": [
+    "Confirm the reason and notice terms with a second reviewer.",
+    "Double-check the employee's name, role and final working day.",
+    "State final settlement, dues and what they keep access to.",
+    "Use plain, respectful language — no blame, no surprises.",
+  ],
+  "resignation-acceptance": [
+    "Confirm the last working day and notice served.",
+    "Acknowledge their contribution warmly and sincerely.",
+    "Note handover, dues and exit-formality next steps.",
+  ],
+  "relieving-letter": [
+    "Verify dates of joining and relieving are correct.",
+    "Confirm all dues are cleared and assets returned.",
+    "Keep the wording clean — this is a record they'll reuse.",
+  ],
+  "experience-letter": [
+    "Check the job title, tenure and dates match their record.",
+    "Keep it factual and generous — they'll share it widely.",
+  ],
+  "rejection-email": [
+    "Use the candidate's name — never a bulk, faceless tone.",
+    "Thank them for their time and keep it kind and brief.",
+    "Avoid specifics that could read as feedback unless intended.",
+  ],
+};
 
 // Calculator-spec lookup re-export for the renderer.
 export { calculatorRegistry };

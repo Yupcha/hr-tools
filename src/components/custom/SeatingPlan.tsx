@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { getIcon } from "../../lib/icons";
+import { exportMonoPdf } from "../../lib/pdf";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -27,6 +28,21 @@ export default function SeatingPlan() {
   const total = rows * cols;
   const Shuffle = getIcon("Shuffle");
   const Printer = getIcon("Printer");
+
+  const savePdf = () => {
+    const cellW = Math.min(Math.max(...names.map((n) => n.length), 5) + 2, 18);
+    const grid: string[] = [];
+    for (let r = 0; r < rows; r++) {
+      const row: string[] = [];
+      for (let c = 0; c < cols; c++) {
+        const name = seats[r * cols + c];
+        row.push((name ?? "—").slice(0, cellW - 1).padEnd(cellW));
+      }
+      grid.push(row.join(""));
+    }
+    const body = "Seating Plan\nFront of class / Teacher\n\n" + grid.join("\n\n");
+    exportMonoPdf("Seating Plan", body);
+  };
   const field = "w-full rounded-yc border border-hairline bg-canvas px-3 py-2 text-[13px] text-ink outline-none focus:border-coral focus:bg-surface focus:ring-4 focus:ring-coral/10";
 
   return (
@@ -50,7 +66,7 @@ export default function SeatingPlan() {
           <button onClick={() => setOrder(shuffle(names))} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-yc bg-ink px-3 py-2 text-[12px] font-semibold text-canvas hover:opacity-90">
             <Shuffle size={15} /> Shuffle
           </button>
-          <button onClick={() => window.print()} className="inline-flex items-center justify-center gap-1.5 rounded-yc border border-hairline px-3 py-2 text-[12px] font-semibold text-body hover:border-ink/20">
+          <button onClick={savePdf} className="inline-flex items-center justify-center gap-1.5 rounded-yc border border-hairline px-3 py-2 text-[12px] font-semibold text-body hover:border-ink/20">
             <Printer size={15} /> PDF
           </button>
         </div>

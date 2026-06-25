@@ -6,7 +6,9 @@ import {
   CalendarClock, CalendarCheck, Cake, Sigma, ClipboardCheck, Scale, KeyRound,
   Search, Copy, Check, Download, Star, Printer, X, ChevronRight, Eye, Pencil,
   Sparkles, Plus, Trash2, RefreshCw, Heart, ArrowLeftRight, Euro, LayoutGrid,
-  Undo2, Shuffle, CalendarRange, type LucideIcon,
+  Undo2, Shuffle, CalendarRange, Command, Moon, Sun, ChevronDown, CornerDownLeft,
+  PanelLeftClose, PanelLeftOpen, Users, Building2, Save, UserPlus,
+  DoorOpen, DoorClosed, ShieldCheck, Stamp, Image, type LucideIcon,
 } from "lucide-react";
 
 const MAP: Record<string, LucideIcon> = {
@@ -16,7 +18,9 @@ const MAP: Record<string, LucideIcon> = {
   CalendarClock, CalendarCheck, Cake, Sigma, ClipboardCheck, Scale, KeyRound,
   Search, Copy, Check, Download, Star, Printer, X, ChevronRight, Eye, Pencil,
   Sparkles, Plus, Trash2, RefreshCw, Heart, ArrowLeftRight, Euro, LayoutGrid,
-  Undo2, Shuffle, CalendarRange,
+  Undo2, Shuffle, CalendarRange, Command, Moon, Sun, ChevronDown, CornerDownLeft,
+  PanelLeftClose, PanelLeftOpen, Users, Building2, Save, UserPlus,
+  DoorOpen, DoorClosed, ShieldCheck, Stamp, Image,
 };
 
 export function getIcon(name: string): LucideIcon {

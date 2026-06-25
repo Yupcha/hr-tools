@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { CalcSpec, CalcField, CalcContext } from "../lib/calc";
 import { money as fmtMoney, num as fmtNum, regionById, type Region } from "../lib/regions";
 import { cn } from "../lib/useLocalStorage";
@@ -55,10 +55,12 @@ function Field({
 }
 
 export default function CalculatorTool({
-  spec, activeRegion,
+  spec, activeRegion, prefill, onPrefillConsumed,
 }: {
   spec: CalcSpec;
   activeRegion: Region;
+  prefill?: Record<string, string> | null;
+  onPrefillConsumed?: () => void;
 }) {
   // Region-specific tools fix their own currency; others follow the app region.
   const region = spec.currency ? regionById(spec.currency) : activeRegion;
@@ -68,6 +70,19 @@ export default function CalculatorTool({
     for (const f of spec.fields) init[f.key] = f.default != null ? String(f.default) : "";
     return init;
   });
+
+  // Consume the one-shot person seed: only overwrite keys this spec actually
+  // has (the seed already remaps canonical names → spec input keys upstream).
+  useEffect(() => {
+    if (!prefill) return;
+    const keys = new Set(spec.fields.map((f) => f.key));
+    setValues((s) => {
+      const next = { ...s };
+      for (const [k, v] of Object.entries(prefill)) if (keys.has(k) && v) next[k] = v;
+      return next;
+    });
+    onPrefillConsumed?.();
+  }, [prefill, spec, onPrefillConsumed]);
 
   const ctx: CalcContext = useMemo(
     () => ({
@@ -87,9 +102,22 @@ export default function CalculatorTool({
   }, [spec, values, ctx]);
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_1.05fr]">
-      {/* Inputs */}
-      <div className="rounded-yc border border-hairline bg-surface p-5 shadow-sm">
+    <div className="space-y-4">
+      {/* Statutory disclaimer — region-fixed payroll/tax tools are estimates. */}
+      {spec.currency && (
+        <div className="flex items-start gap-2 rounded-yc border border-ochre/30 bg-ochre/10 px-4 py-2.5 text-[12px] leading-relaxed text-ochre">
+          <span aria-hidden className="mt-px font-bold">⚠</span>
+          <span>
+            <strong>Estimate only.</strong> Statutory rates (tax, PF/EPF, gratuity, end-of-service) change yearly
+            and vary by state, emirate, contract and your declarations. Figures use <strong>FY 2024-25</strong> rules —
+            always verify with an official source or payroll team before relying on them.
+          </span>
+        </div>
+      )}
+
+      <div className="grid gap-6 lg:grid-cols-[1fr_1.05fr]">
+        {/* Inputs */}
+        <div className="rounded-yc border border-hairline bg-surface p-5 shadow-sm">
         <div className="mb-4 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-faint">
           Inputs
           {spec.currency && (
@@ -112,7 +140,7 @@ export default function CalculatorTool({
       </div>
 
       {/* Results */}
-      <div className="rounded-yc border border-hairline bg-gradient-to-br from-surface to-soft/40 p-5 shadow-sm">
+      <div className="rounded-yc border border-hairline bg-surface p-5">
         <div className="mb-4 text-[11px] font-semibold uppercase tracking-widest text-faint">Result</div>
         <div className="space-y-1">
           {result.rows.map((r, i) => (
@@ -144,6 +172,7 @@ export default function CalculatorTool({
             {result.note}
           </p>
         )}
+        </div>
       </div>
     </div>
   );

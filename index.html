@@ -4,6 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>hrToolkit — Free HR &amp; Productivity Tools</title>
+    <!-- Set theme before first paint to avoid a light/dark flash. -->
+    <script>
+      (function () {
+        try {
+          var saved = JSON.parse(localStorage.getItem("hrt.theme"));
+          var dark =
+            saved === "dark" ||
+            (saved !== "light" &&
+              window.matchMedia &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches);
+          if (dark) document.documentElement.classList.add("dark");
+        } catch (e) {}
+      })();
+    </script>
   </head>
 
   <body>

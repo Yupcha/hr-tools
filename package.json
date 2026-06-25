@@ -2,22 +2,37 @@
   "name": "hrtoolkit",
   "private": true,
   "version": "0.1.0",
+  "description": "Free, open-source desktop toolkit for busy recruiters, HR teams and teachers — letters, HR emails, payslips, region-aware payroll calculators and classroom tools, fully offline.",
+  "license": "MIT",
+  "author": "debpalash",
+  "homepage": "https://github.com/debpalash/hrtoolkit",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/debpalash/hrtoolkit.git"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "mcp": "bun mcp/server.ts",
     "tauri": "tauri"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-dialog": "^2.7.1",
+    "@tauri-apps/plugin-fs": "^2.5.1",
     "@tauri-apps/plugin-opener": "^2",
     "clsx": "^2.1.1",
+    "jspdf": "^4.2.1",
     "lucide-react": "^1.21.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@tailwindcss/vite": "^4.3.1",
     "@tauri-apps/cli": "^2",
     "@types/react": "^19.1.8",
@@ -25,6 +40,8 @@
     "@vitejs/plugin-react": "^4.6.0",
     "tailwindcss": "^4.3.1",
     "typescript": "~5.8.3",
-    "vite": "^7.0.4"
+    "vite": "^7.0.4",
+    "vitest": "^4.1.9",
+    "zod": "^4.4.3"
   }
 }

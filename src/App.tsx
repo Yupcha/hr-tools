@@ -1,21 +1,43 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Sidebar from "./components/Sidebar";
 import ToolView from "./components/ToolView";
 import Home from "./components/Home";
+import CommandPalette from "./components/CommandPalette";
+import OfflineBadge from "./components/OfflineBadge";
 import { TOOL_BY_ID, GROUP_BY_TOOL } from "./data/catalog";
 import { regionById, type RegionId } from "./lib/regions";
 import { getIcon } from "./lib/icons";
 import { useLocalStorage, cn } from "./lib/useLocalStorage";
+import { useTheme } from "./lib/useTheme";
 
 export default function App() {
   const [activeId, setActiveId] = useLocalStorage<string | null>("hrt.active", null);
   const [region, setRegion] = useLocalStorage<RegionId>("hrt.region", "IN");
   const [favorites, setFavorites] = useLocalStorage<string[]>("hrt.favorites", []);
   const [recents, setRecents] = useLocalStorage<string[]>("hrt.recents", []);
+  const [sidebarOpen, setSidebarOpen] = useLocalStorage<boolean>("hrt.sidebar", true);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  // Transient, NON-persisted "person → document" seed. Consumed once by the
+  // opened tool, then cleared. This is the whole person-as-hero channel.
+  const [prefill, setPrefill] = useState<Record<string, string> | null>(null);
+
+  const { theme, toggle: toggleTheme } = useTheme();
+  const searchRef = useRef<HTMLInputElement | null>(null);
+  const mac = useMemo(
+    () => typeof navigator !== "undefined" && /Mac|iP(hone|ad|od)/.test(navigator.platform),
+    [],
+  );
 
   const tool = activeId ? TOOL_BY_ID[activeId] : null;
 
-  const select = (id: string) => {
+  // `seed` is an optional one-shot prefill carried into the opened tool. All
+  // existing single-arg callers still type-check (seed defaults to undefined).
+  const select = (id: string, seed?: Record<string, string>) => {
+    setPrefill(seed ?? null);
+    if (!id) {
+      setActiveId(null); // home
+      return;
+    }
     setActiveId(id);
     setRecents((r) => [id, ...r.filter((x) => x !== id)].slice(0, 8));
   };
@@ -28,25 +50,83 @@ export default function App() {
     if (activeId && !TOOL_BY_ID[activeId]) setActiveId(null);
   }, [activeId, setActiveId]);
 
+  // ── Global keyboard shortcuts ──────────────────────────────────────────
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const mod = e.metaKey || e.ctrlKey;
+      const el = e.target as HTMLElement | null;
+      const typing =
+        el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable);
+
+      // ⌘K / Ctrl+K — command palette (works even while typing)
+      if (mod && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setPaletteOpen((o) => !o);
+        return;
+      }
+      // ⌘\ / Ctrl+\ — collapse sidebar
+      if (mod && e.key === "\\") {
+        e.preventDefault();
+        setSidebarOpen((o) => !o);
+        return;
+      }
+      if (typing) return;
+      // "/" — focus the sidebar filter
+      if (e.key === "/") {
+        e.preventDefault();
+        if (!sidebarOpen) setSidebarOpen(true);
+        requestAnimationFrame(() => searchRef.current?.focus());
+        return;
+      }
+      // Esc — close palette, else go home
+      if (e.key === "Escape") {
+        if (paletteOpen) return; // palette handles its own esc
+        if (activeId) setActiveId(null);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [activeId, paletteOpen, sidebarOpen, setActiveId, setSidebarOpen]);
+
   const Star = getIcon("Star");
+  const PanelOpen = getIcon("PanelLeftOpen");
   const group = tool ? GROUP_BY_TOOL[tool.id] : null;
   const fav = tool ? favorites.includes(tool.id) : false;
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-canvas text-body">
-      <Sidebar
-        activeId={activeId}
-        onSelect={select}
-        region={region}
-        onRegion={setRegion}
-        favorites={favorites}
-        onToggleFav={toggleFav}
-      />
+      {sidebarOpen && (
+        <Sidebar
+          activeId={activeId}
+          onSelect={select}
+          region={region}
+          onRegion={setRegion}
+          favorites={favorites}
+          onToggleFav={toggleFav}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          onOpenPalette={() => setPaletteOpen(true)}
+          onCollapse={() => setSidebarOpen(false)}
+          searchRef={searchRef}
+          mac={mac}
+        />
+      )}
 
-      <main className="flex h-full min-w-0 flex-1 flex-col">
+      <main className="relative flex h-full min-w-0 flex-1 flex-col">
+        {!sidebarOpen && (
+          <button
+            onClick={() => setSidebarOpen(true)}
+            title="Show sidebar  (⌘\\)"
+            aria-label="Show sidebar"
+            className="no-print absolute left-3 top-3 z-20 flex h-8 w-8 items-center justify-center rounded-lg border border-hairline bg-surface text-muted shadow-sm transition hover:text-ink"
+          >
+            <PanelOpen size={16} />
+          </button>
+        )}
+
         {tool ? (
           <>
-            <header className="no-print flex items-center gap-3 border-b border-hairline bg-surface/70 px-6 py-3.5 backdrop-blur">
+            <header className={cn("no-print flex items-center gap-3 border-b border-hairline bg-surface/70 py-3.5 pr-6 backdrop-blur", sidebarOpen ? "pl-6" : "pl-14")}>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-faint">
                   {group?.label}
@@ -58,6 +138,7 @@ export default function App() {
                 </div>
                 <h1 className="truncate text-[19px] font-bold tracking-tight text-ink">{tool.title}</h1>
               </div>
+              <OfflineBadge />
               <button
                 onClick={() => toggleFav(tool.id)}
                 className={cn(
@@ -72,13 +153,31 @@ export default function App() {
 
             <div className="scroll flex-1 overflow-y-auto px-6 py-6">
               <p className="no-print mb-5 max-w-3xl text-[14px] leading-relaxed text-muted">{tool.description}</p>
-              <ToolView tool={tool} region={regionById(region)} />
+              <ToolView
+                tool={tool}
+                region={regionById(region)}
+                prefill={prefill}
+                onPrefillConsumed={() => setPrefill(null)}
+                onSelect={select}
+              />
             </div>
           </>
         ) : (
-          <Home recents={recents} onSelect={select} />
+          <Home
+            recents={recents}
+            onSelect={select}
+            onOpenPalette={() => setPaletteOpen(true)}
+            mac={mac}
+          />
         )}
       </main>
+
+      <CommandPalette
+        open={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        onSelect={select}
+        activeId={activeId}
+      />
     </div>
   );
 }

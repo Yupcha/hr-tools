@@ -1,11 +1,14 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type RefObject } from "react";
 import { NAV, ALL_TOOLS, type Tool } from "../data/catalog";
 import { REGIONS, type RegionId } from "../lib/regions";
 import { getIcon } from "../lib/icons";
-import { cn } from "../lib/useLocalStorage";
+import { cn, useLocalStorage } from "../lib/useLocalStorage";
+import type { Theme } from "../lib/useTheme";
+import OfflineBadge from "./OfflineBadge";
 
 export default function Sidebar({
   activeId, onSelect, region, onRegion, favorites, onToggleFav,
+  theme, onToggleTheme, onOpenPalette, onCollapse, searchRef, mac,
 }: {
   activeId: string | null;
   onSelect: (id: string) => void;
@@ -13,9 +16,19 @@ export default function Sidebar({
   onRegion: (r: RegionId) => void;
   favorites: string[];
   onToggleFav: (id: string) => void;
+  theme: Theme;
+  onToggleTheme: () => void;
+  onOpenPalette: () => void;
+  onCollapse: () => void;
+  searchRef: RefObject<HTMLInputElement | null>;
+  mac: boolean;
 }) {
   const [query, setQuery] = useState("");
+  const [collapsed, setCollapsed] = useLocalStorage<Record<string, boolean>>("hrt.groups", {});
   const Search = getIcon("Search");
+  const Moon = getIcon("Moon");
+  const Sun = getIcon("Sun");
+  const PanelClose = getIcon("PanelLeftClose");
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -29,28 +42,49 @@ export default function Sidebar({
   }, [query]);
 
   const favTools = favorites.map((id) => ALL_TOOLS.find((t) => t.id === id)).filter(Boolean) as Tool[];
+  const toggleGroup = (id: string) => setCollapsed((c) => ({ ...c, [id]: !c[id] }));
 
   return (
     <aside className="no-print flex h-full w-[272px] shrink-0 flex-col border-r border-hairline bg-soft/40">
-      {/* Brand */}
+      {/* Brand + quick controls */}
       <div className="flex items-center gap-2.5 px-4 pb-3 pt-4">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-coral text-[15px] font-bold text-white">h</div>
-        <div className="leading-tight">
-          <div className="text-[15px] font-bold tracking-tight text-ink">hrToolkit</div>
-          <div className="text-[10px] font-medium uppercase tracking-wider text-faint">free · offline</div>
+        <button onClick={() => onSelect("")} className="flex items-center gap-2.5 text-left" title="Home">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-coral text-[15px] font-bold text-white shadow-sm">h</div>
+          <div className="leading-tight">
+            <div className="text-[15px] font-bold tracking-tight text-ink">hrToolkit</div>
+            <div className="text-[10px] font-medium uppercase tracking-wider text-faint">free · offline</div>
+          </div>
+        </button>
+        <div className="ml-auto flex items-center gap-0.5">
+          <IconBtn label={theme === "dark" ? "Light mode" : "Dark mode"} onClick={onToggleTheme}>
+            {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
+          </IconBtn>
+          <IconBtn label="Collapse sidebar" onClick={onCollapse}>
+            <PanelClose size={15} />
+          </IconBtn>
         </div>
       </div>
 
-      {/* Search */}
+      {/* Search + filter in one: type to filter the list, ⌘K for the full palette */}
       <div className="px-3">
         <div className="relative">
           <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint" />
           <input
+            ref={searchRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search tools…"
-            className="w-full rounded-yc border border-hairline bg-surface py-2 pl-9 pr-3 text-[13px] text-ink outline-none transition focus:border-coral focus:ring-4 focus:ring-coral/10"
+            className="w-full rounded-yc border border-hairline bg-surface py-2 pl-9 pr-14 text-[13px] text-ink outline-none transition focus:border-coral focus:ring-4 focus:ring-coral/10"
           />
+          <button
+            type="button"
+            onClick={onOpenPalette}
+            title="Open command palette"
+            aria-label="Open command palette"
+            className="absolute right-2 top-1/2 -translate-y-1/2 transition hover:opacity-100 opacity-80"
+          >
+            <kbd>{mac ? "⌘" : "Ctrl"} K</kbd>
+          </button>
         </div>
       </div>
 
@@ -71,7 +105,7 @@ export default function Sidebar({
       {/* Scrollable nav */}
       <nav className="scroll mt-2 flex-1 overflow-y-auto px-2 pb-4">
         {results ? (
-          <Section label={`${results.length} result${results.length === 1 ? "" : "s"}`}>
+          <Section id="__results" label={`${results.length} result${results.length === 1 ? "" : "s"}`}>
             {results.map((t) => (
               <ToolRow key={t.id} tool={t} active={activeId === t.id} onSelect={onSelect} fav={favorites.includes(t.id)} onToggleFav={onToggleFav} />
             ))}
@@ -80,14 +114,14 @@ export default function Sidebar({
         ) : (
           <>
             {favTools.length > 0 && (
-              <Section label="Favorites" icon="Star">
+              <Section id="__fav" label="Favorites" icon="Star" collapsed={collapsed["__fav"]} onToggle={toggleGroup}>
                 {favTools.map((t) => (
                   <ToolRow key={t.id} tool={t} active={activeId === t.id} onSelect={onSelect} fav onToggleFav={onToggleFav} />
                 ))}
               </Section>
             )}
             {NAV.map((g) => (
-              <Section key={g.id} label={g.label} icon={g.icon} count={g.tools.length}>
+              <Section key={g.id} id={g.id} label={g.label} icon={g.icon} count={g.tools.length} collapsed={collapsed[g.id]} onToggle={toggleGroup}>
                 {g.tools.map((t) => (
                   <ToolRow key={t.id} tool={t} active={activeId === t.id} onSelect={onSelect} fav={favorites.includes(t.id)} onToggleFav={onToggleFav} />
                 ))}
@@ -96,20 +130,68 @@ export default function Sidebar({
           </>
         )}
       </nav>
+
+      {/* Permanent trust presence — a quiet, settled "Offline · Private" line
+          anchored at the foot of the shell. Always visible while the sidebar is
+          open; the tool-header badge covers the collapsed case. */}
+      <div className="border-t border-hairline px-4 py-2.5">
+        <OfflineBadge variant="footer" />
+      </div>
     </aside>
   );
 }
 
-function Section({ label, icon, count, children }: { label: string; icon?: string; count?: number; children: React.ReactNode }) {
+function IconBtn({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      title={label}
+      aria-label={label}
+      className="flex h-7 w-7 items-center justify-center rounded-lg text-muted transition hover:bg-surface hover:text-ink"
+    >
+      {children}
+    </button>
+  );
+}
+
+function Section({
+  id, label, icon, count, children, collapsed, onToggle,
+}: {
+  id: string;
+  label: string;
+  icon?: string;
+  count?: number;
+  children: React.ReactNode;
+  collapsed?: boolean;
+  onToggle?: (id: string) => void;
+}) {
   const Icon = icon ? getIcon(icon) : null;
+  const Chevron = getIcon("ChevronDown");
+  const foldable = !!onToggle;
+  const open = !collapsed;
   return (
     <div className="mb-1.5">
-      <div className="flex items-center gap-1.5 px-3 pb-1 pt-3 text-[10.5px] font-bold uppercase tracking-[0.12em] text-faint">
+      <button
+        onClick={() => onToggle?.(id)}
+        disabled={!foldable}
+        className={cn(
+          "flex w-full items-center gap-1.5 px-3 pb-1 pt-3 text-[10.5px] font-bold uppercase tracking-[0.12em] text-faint",
+          foldable && "cursor-pointer transition hover:text-muted",
+        )}
+      >
+        {foldable && (
+          <Chevron
+            size={12}
+            className={cn("shrink-0 transition-transform duration-200", open ? "" : "-rotate-90")}
+          />
+        )}
         {Icon && <Icon size={12} />}
-        {label}
+        <span>{label}</span>
         {count != null && <span className="ml-auto font-mono text-[10px] font-normal opacity-70">{count}</span>}
+      </button>
+      <div className="collapsible" data-open={open ? "true" : "false"}>
+        <div>{children}</div>
       </div>
-      {children}
     </div>
   );
 }

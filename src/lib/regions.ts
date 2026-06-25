@@ -2,7 +2,7 @@
 // the Middle East and Africa — the active region drives currency formatting for
 // the generic calculators. Region-specific calculators carry their own currency.
 
-export type RegionId = "IN" | "US" | "UK" | "EU" | "AE" | "ZA" | "NG";
+export type RegionId = "IN" | "US" | "UK" | "EU" | "AE" | "SA" | "ZA" | "NG";
 
 export interface Region {
   id: RegionId;
@@ -18,7 +18,8 @@ export const REGIONS: Region[] = [
   { id: "US", label: "United States", flag: "🇺🇸", currency: "USD", symbol: "$", locale: "en-US" },
   { id: "UK", label: "United Kingdom", flag: "🇬🇧", currency: "GBP", symbol: "£", locale: "en-GB" },
   { id: "EU", label: "Europe", flag: "🇪🇺", currency: "EUR", symbol: "€", locale: "de-DE" },
-  { id: "AE", label: "UAE / Middle East", flag: "🇦🇪", currency: "AED", symbol: "د.إ", locale: "en-AE" },
+  { id: "AE", label: "UAE", flag: "🇦🇪", currency: "AED", symbol: "د.إ", locale: "en-AE" },
+  { id: "SA", label: "Saudi Arabia", flag: "🇸🇦", currency: "SAR", symbol: "﷼", locale: "en-SA" },
   { id: "ZA", label: "South Africa", flag: "🇿🇦", currency: "ZAR", symbol: "R", locale: "en-ZA" },
   { id: "NG", label: "Nigeria", flag: "🇳🇬", currency: "NGN", symbol: "₦", locale: "en-NG" },
 ];

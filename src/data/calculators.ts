@@ -36,12 +36,16 @@ function indiaNet(ctc: number, basicPct: number, regime: string) {
   const profTax = 2400;
   let incomeTax = 0;
   if (regime !== "none") {
-    const taxable = Math.max(0, grossCash - 50000);
+    // New regime FY 2024-25: standard deduction ₹75,000 (raised in Budget 2024).
+    const taxable = Math.max(0, grossCash - 75000);
     if (taxable > 700000) {
-      incomeTax = progressiveTax(taxable, [
+      let tax = progressiveTax(taxable, [
         [300000, 0], [700000, 0.05], [1000000, 0.1],
         [1200000, 0.15], [1500000, 0.2], [Infinity, 0.3],
-      ]) * 1.04; // 4% cess
+      ]);
+      // §87A marginal relief: tax cannot exceed income above the ₹7L rebate limit.
+      tax = Math.min(tax, taxable - 700000);
+      incomeTax = tax * 1.04; // 4% health & education cess
     }
   }
   const net = grossCash - employeePf - profTax - incomeTax;
@@ -408,6 +412,7 @@ export const calculatorRegistry: Record<string, CalcSpec> = {
   },
 
   "ksa-gratuity": {
+    currency: "SA",
     fields: [
       { key: "wage", label: "Last monthly wage", type: "currency", default: 12000, half: true },
       { key: "years", label: "Years of service", type: "number", default: 7, half: true },

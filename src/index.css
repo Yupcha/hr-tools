@@ -1,26 +1,88 @@
 @import "tailwindcss";
 
-/* hrToolkit theme — warm, calm, productivity-focused. */
+/* ─────────────────────────────────────────────────────────────────────────
+   hrToolkit theme — Notion-calm × Obsidian-dense, warm coral identity.
+   See DESIGN.md. Tokens are semantic; components never reference raw hex.
+   Light values live in @theme; .dark overrides the same CSS variables so the
+   whole app re-themes at runtime without any component branching on theme.
+   ──────────────────────────────────────────────────────────────────────── */
 @theme {
+  /* Surfaces & text — LIGHT (Notion-calm, warm neutral) */
   --color-canvas: #faf8f5;
   --color-surface: #ffffff;
-  --color-soft: #f3efe9;
-  --color-hairline: #e8e2d9;
+  --color-soft: #f4f0ea;
+  --color-hairline: #ece7df;
   --color-ink: #2b2622;
   --color-body: #4a443d;
   --color-muted: #7c746a;
   --color-faint: #a89f93;
-  --color-coral: #e2643c;
+
+  /* Accents */
+  --color-coral: #e05d35;
   --color-coral-soft: #fbe9e2;
   --color-teal: #2f8f83;
   --color-mint: #3da57f;
   --color-ochre: #c8902a;
   --color-sky: #3a7bd5;
 
-  --radius-yc: 0.85rem;
+  --radius-yc: 0.7rem;
+
+  /* Near-flat, warm-tinted shadows (Notion-calm — lean on hairlines + whitespace) */
+  --shadow-xs: 0 1px 1px 0 rgb(45 35 25 / 0.03);
+  --shadow-sm: 0 1px 2px 0 rgb(45 35 25 / 0.04);
+  --shadow-md: 0 2px 8px -3px rgb(45 35 25 / 0.06);
+  --shadow-lg: 0 8px 28px -8px rgb(45 35 25 / 0.12);
 
   --font-sans: "SUSE", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
+
+  /* Palette motion */
+  --ease-snap: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* Animations (Tailwind v4 exposes these as animate-pop / animate-rise / animate-fade) */
+  --animate-pop: pop 0.13s var(--ease-snap);
+  --animate-fade: fade 0.13s ease;
+  --animate-rise: rise 0.16s var(--ease-snap);
+}
+
+/* ── DARK (Obsidian near-black, warm-tinted) ─────────────────────────────── */
+.dark {
+  --color-canvas: #1a1815;
+  --color-surface: #221f1a;
+  --color-soft: #2b2721;
+  --color-hairline: #38332b;
+  --color-ink: #f1ece3;
+  --color-body: #cdc5b9;
+  --color-muted: #978d7f;
+  --color-faint: #6c6358;
+
+  --color-coral: #f0764d;
+  --color-coral-soft: #3a2820;
+  --color-teal: #46b7a8;
+  --color-mint: #54c596;
+  --color-ochre: #e0a847;
+  --color-sky: #6aa3e8;
+
+  /* Dark surfaces are raised by tone, not shadow — keep shadows nearly invisible. */
+  --shadow-xs: 0 0 0 0 transparent;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.18);
+  --shadow-md: 0 2px 10px -4px rgb(0 0 0 / 0.28);
+  --shadow-lg: 0 10px 30px -10px rgb(0 0 0 / 0.45);
+
+  color-scheme: dark;
+}
+
+@keyframes pop {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 * {
@@ -42,6 +104,24 @@ body {
   overflow: hidden; /* app shell scrolls internally */
 }
 
+/* Light⇄dark melt: transition theme-able properties globally, but keep
+   interactive transforms snappy (they declare their own transition). */
+body,
+aside,
+nav,
+main,
+header,
+section,
+input,
+select,
+textarea,
+button {
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
 /* thin scrollbars */
 .scroll::-webkit-scrollbar {
   width: 9px;
@@ -61,10 +141,55 @@ textarea {
   font-family: inherit;
 }
 
-/* Print: only the .printable document survives, everything else hidden. */
+/* Keyboard-shortcut chips */
+kbd {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  line-height: 1;
+  padding: 3px 5px;
+  border-radius: 5px;
+  background: var(--color-soft);
+  border: 1px solid var(--color-hairline);
+  color: var(--color-muted);
+  font-weight: 600;
+}
+
+/* Collapsible sidebar groups — animate height via grid-rows. */
+.collapsible {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.18s ease;
+}
+.collapsible[data-open="false"] {
+  grid-template-rows: 0fr;
+}
+.collapsible > div {
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  body,
+  aside,
+  nav,
+  main,
+  header,
+  section,
+  input,
+  select,
+  textarea,
+  button {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* Print: only the .printable document survives, everything else hidden.
+   Force a light document regardless of app theme. */
 @media print {
   body {
     overflow: visible;
+    background: #fff !important;
   }
   .no-print {
     display: none !important;
@@ -83,6 +208,9 @@ textarea {
     color: #000 !important;
     font-size: 13px !important;
     white-space: pre-wrap !important;
+  }
+  .printable * {
+    color: #000 !important;
   }
   @page {
     size: A4;

@@ -9,27 +9,55 @@ import WeightedGrade from "./custom/WeightedGrade";
 import PasswordGenerator from "./custom/PasswordGenerator";
 import LessonPlanner from "./custom/LessonPlanner";
 import SeatingPlan from "./custom/SeatingPlan";
+import Profiles from "./custom/Profiles";
+import AiSettings from "./custom/AiSettings";
 
-const CUSTOM: Record<string, React.FC> = {
+/** One-shot seed passed in when a tool is opened "about a person". */
+export type Prefill = Record<string, string> | null;
+
+/**
+ * Custom tools may optionally accept the person-as-hero plumbing. The widened
+ * type means a custom view can launch other tools with a seed (e.g. Profiles'
+ * PersonCard) without each component being forced to declare the props.
+ */
+export interface CustomProps {
+  onSelect?: (id: string, seed?: Record<string, string>) => void;
+}
+
+const CUSTOM: Record<string, React.FC<CustomProps>> = {
   "jd-resume-matcher": JdResumeMatcher,
   "gpa-calculator": GpaCalculator,
   "weighted-grade": WeightedGrade,
   "password-generator": PasswordGenerator,
   "lesson-planner": LessonPlanner,
   "seating-plan": SeatingPlan,
+  "profiles": Profiles,
+  "ai-settings": AiSettings,
 };
 
-export default function ToolView({ tool, region }: { tool: Tool; region: Region }) {
+export default function ToolView({
+  tool, region, prefill, onPrefillConsumed, onSelect,
+}: {
+  tool: Tool;
+  region: Region;
+  prefill?: Prefill;
+  onPrefillConsumed?: () => void;
+  onSelect?: (id: string, seed?: Record<string, string>) => void;
+}) {
   if (tool.kind === "template") {
     const meta = templateRegistry[tool.id];
-    return meta ? <TemplateTool meta={meta} /> : <Missing id={tool.id} />;
+    return meta
+      ? <TemplateTool toolId={tool.id} meta={meta} prefill={prefill ?? null} onPrefillConsumed={onPrefillConsumed} />
+      : <Missing id={tool.id} />;
   }
   if (tool.kind === "calculator") {
     const spec = calculatorRegistry[tool.id];
-    return spec ? <CalculatorTool spec={spec} activeRegion={region} /> : <Missing id={tool.id} />;
+    return spec
+      ? <CalculatorTool spec={spec} activeRegion={region} prefill={prefill ?? null} onPrefillConsumed={onPrefillConsumed} />
+      : <Missing id={tool.id} />;
   }
   const Cmp = CUSTOM[tool.id];
-  return Cmp ? <Cmp /> : <Missing id={tool.id} />;
+  return Cmp ? <Cmp onSelect={onSelect} /> : <Missing id={tool.id} />;
 }
 
 const Missing = ({ id }: { id: string }) => (
