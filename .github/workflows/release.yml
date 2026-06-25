@@ -110,16 +110,40 @@ jobs:
       - name: Initialize Android project
         run: bun run tauri android init
 
-      - name: Build APK (debug-signed, installable)
-        run: bun run tauri android build --apk --debug
-
-      - name: Collect APK
-        id: apk
+      # Generate a signing keystore (from the ANDROID_KEYSTORE_PASSWORD secret if
+      # set, else a default for sideload builds). For Play Store / stable
+      # cross-version update signing, set that secret to your own key's password
+      # and commit your keystore via a secret instead.
+      - name: Generate signing keystore
+        working-directory: src-tauri/gen/android
+        env:
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD || 'hrtoolkit-sideload' }}
         run: |
-          APK=$(find src-tauri/gen/android -name "*.apk" | head -n 1)
-          if [ -z "$APK" ]; then echo "::error::No APK produced"; exit 1; fi
+          keytool -genkeypair -v -keystore keystore.jks -keyalg RSA -keysize 2048 \
+            -validity 10000 -alias hrtoolkit -storepass "$KS_PASS" -keypass "$KS_PASS" \
+            -dname "CN=hrToolkit, O=Yupcha, C=US"
+
+      - name: Build release APK (stripped & optimised)
+        run: bun run tauri android build --apk
+
+      # Explicitly zipalign + sign the release APK ourselves so it's installable
+      # regardless of the generated Gradle config, and verify the signature.
+      - name: Sign & collect APK
+        id: apk
+        env:
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD || 'hrtoolkit-sideload' }}
+        run: |
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)
+          KS="$PWD/src-tauri/gen/android/keystore.jks"
+          RAW=$(find src-tauri/gen/android -name "*release*.apk" | head -n 1)
+          [ -z "$RAW" ] && RAW=$(find src-tauri/gen/android -name "*.apk" | head -n 1)
+          if [ -z "$RAW" ]; then echo "::error::No APK produced"; exit 1; fi
+          echo "raw APK: $RAW ($(du -h "$RAW" | cut -f1))"
+          "$BT/zipalign" -f -p 4 "$RAW" aligned.apk
+          "$BT/apksigner" sign --ks "$KS" --ks-pass "pass:$KS_PASS" --ks-key-alias hrtoolkit aligned.apk
+          "$BT/apksigner" verify --verbose aligned.apk
           OUT="hrToolkit-${TAG}-android.apk"
-          cp "$APK" "$OUT"
+          mv aligned.apk "$OUT"
           echo "path=$OUT" >> "$GITHUB_OUTPUT"
           ls -la "$OUT"
 
