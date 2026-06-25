@@ -2,7 +2,7 @@
 
 # hrToolkit — Free, Offline HR & Payroll Toolkit
 
-**60 HR tools in one tiny desktop app.** Offer-letter & HR-email generators, payslips,
+**60+ HR tools in one tiny desktop app.** Offer-letter & HR-email generators, payslips,
 region-aware **payroll & tax calculators** (India · US · UK · Europe · UAE · Saudi · Nigeria · South Africa),
 and classroom tools — **100% offline**. No accounts, no cloud, nothing leaves your machine.
 
@@ -117,7 +117,7 @@ one-line brief and it fills the fields. The request is made by the app's **Rust 
 never touches the front-end.
 
 **MCP server** — hrToolkit ships an [MCP](https://modelcontextprotocol.io) server (`mcp/`)
-that broadcasts its tools to agents (Claude Desktop, Claude Code, …): discover the 60 tools,
+that broadcasts its tools to agents (Claude Desktop, Claude Code, …): discover every tool,
 generate documents and run calculators programmatically, all locally. Run `bun run mcp`;
 see [mcp/README.md](./mcp/README.md).
 

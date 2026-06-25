@@ -83,6 +83,7 @@ const CUSTOM: Tool[] = [
   { id: "seating-plan", kind: "custom", title: "Seating Plan", description: "Generate and shuffle a classroom seating chart you can print.", icon: "LayoutGrid", audience: "teacher", keywords: "classroom chart students random" },
   { id: "profiles", kind: "custom", title: "Saved Profiles", description: "Save companies & people once, then auto-fill them across every letter, email and payslip.", icon: "Users", audience: "all", keywords: "company employee candidate address book autofill contacts directory" },
   { id: "ai-settings", kind: "custom", title: "AI Assist", description: "Optional AI drafting — a local model (Ollama) or your own Anthropic key. Off by default; the app stays offline until you enable it.", icon: "Sparkles", audience: "all", keywords: "ai llm claude ollama llama draft autofill assistant settings optional offline byok" },
+  { id: "about", kind: "custom", title: "About this project", description: "What hrToolkit is, what's inside, and more from Yupcha.", icon: "Heart", audience: "all", keywords: "about info help yupcha website credits license version source github" },
 ];
 
 /* ── Build template tools from the registry, grouped by tab + category ── */
@@ -172,8 +173,9 @@ export const NAV: NavGroup[] = [
   {
     id: "utilities",
     label: "Utilities",
+    // (about tool is CUSTOM[8])
     icon: "Wrench",
-    tools: [CUSTOM[3]],
+    tools: [CUSTOM[3], CUSTOM[8]],
   },
 ];
 

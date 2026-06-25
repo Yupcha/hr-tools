@@ -73,13 +73,10 @@ function renderTextDoc(doc: jsPDF, body: string, mono: boolean, craft?: DocCraft
   };
   setBody();
 
-  const footer = () => {
-    doc.setFont(serif, "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(150, 150, 150);
-    doc.text("Generated with hrToolkit · free & offline", margin, pageH - 28);
-    setBody();
-  };
+  // No tool branding on the document itself — generated letters/payslips/etc.
+  // come out clean, as official company documents should. (App chrome is branded;
+  // the output never is.)
+  const footer = () => {};
 
   let y = margin;
 

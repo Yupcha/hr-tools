@@ -11,6 +11,7 @@ import LessonPlanner from "./custom/LessonPlanner";
 import SeatingPlan from "./custom/SeatingPlan";
 import Profiles from "./custom/Profiles";
 import AiSettings from "./custom/AiSettings";
+import About from "./custom/About";
 
 /** One-shot seed passed in when a tool is opened "about a person". */
 export type Prefill = Record<string, string> | null;
@@ -33,6 +34,7 @@ const CUSTOM: Record<string, React.FC<CustomProps>> = {
   "seating-plan": SeatingPlan,
   "profiles": Profiles,
   "ai-settings": AiSettings,
+  "about": About,
 };
 
 export default function ToolView({

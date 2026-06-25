@@ -6,7 +6,7 @@ This project adheres to [Semantic Versioning](https://semver.org).
 ## [0.1.0] — 2026-06-25
 
 First release. A free, open-source, **offline-by-default** desktop app (Tauri v2 + React 19 +
-TypeScript + Tailwind v4) for recruiters, HR teams and teachers — **60 tools across 10 categories**,
+TypeScript + Tailwind v4) for recruiters, HR teams and teachers — **60+ tools across 10 categories**,
 curated for India, the US, Europe/UK, the Middle East and Africa.
 
 ### Added — app shell

@@ -5,6 +5,7 @@ import { getIcon } from "../lib/icons";
 import { cn, useLocalStorage } from "../lib/useLocalStorage";
 import type { Theme } from "../lib/useTheme";
 import OfflineBadge from "./OfflineBadge";
+import { openExternal, YUPCHA_URL } from "../lib/links";
 
 export default function Sidebar({
   activeId, onSelect, region, onRegion, favorites, onToggleFav,
@@ -134,7 +135,14 @@ export default function Sidebar({
       {/* Permanent trust presence — a quiet, settled "Offline · Private" line
           anchored at the foot of the shell. Always visible while the sidebar is
           open; the tool-header badge covers the collapsed case. */}
-      <div className="border-t border-hairline px-4 py-2.5">
+      <div className="space-y-2 border-t border-hairline px-4 py-2.5">
+        <div className="flex items-center gap-2 text-[11px] font-medium text-muted">
+          <button onClick={() => onSelect("about")} className="transition hover:text-ink">About</button>
+          <span className="opacity-40">·</span>
+          <button onClick={() => openExternal(YUPCHA_URL)} className="transition hover:text-coral" title="Visit yupcha.com">
+            yupcha.com&nbsp;↗
+          </button>
+        </div>
         <OfflineBadge variant="footer" />
       </div>
     </aside>

@@ -280,9 +280,6 @@ export default function TemplateTool({
           >
             {text}
           </pre>
-          <div className="no-print mt-6 border-t border-hairline pt-3 text-center text-[10px] font-semibold uppercase tracking-[0.2em] text-faint">
-            Generated with hrToolkit · free & offline
-          </div>
         </div>
       </div>
     </div>
