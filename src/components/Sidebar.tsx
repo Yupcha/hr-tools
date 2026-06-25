@@ -52,7 +52,7 @@ export default function Sidebar({
         <button onClick={() => onSelect("")} className="flex items-center gap-2.5 text-left" title="Home">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-coral text-[15px] font-bold text-white shadow-sm">h</div>
           <div className="leading-tight">
-            <div className="text-[15px] font-bold tracking-tight text-ink">hrToolkit</div>
+            <div className="text-[15px] font-bold tracking-tight text-ink">hr-tools</div>
             <div className="text-[10px] font-medium uppercase tracking-wider text-faint">free · offline</div>
           </div>
         </button>
@@ -136,11 +136,10 @@ export default function Sidebar({
           anchored at the foot of the shell. Always visible while the sidebar is
           open; the tool-header badge covers the collapsed case. */}
       <div className="space-y-2 border-t border-hairline px-4 py-2.5">
-        <div className="flex items-center gap-2 text-[11px] font-medium text-muted">
+        <div className="flex items-center justify-between gap-2 text-[11px] font-medium text-muted">
           <button onClick={() => onSelect("about")} className="transition hover:text-ink">About</button>
-          <span className="opacity-40">·</span>
           <button onClick={() => openExternal(YUPCHA_URL)} className="transition hover:text-coral" title="Visit yupcha.com">
-            yupcha.com&nbsp;↗
+            Powered by Yupcha.com&nbsp;↗
           </button>
         </div>
         <OfflineBadge variant="footer" />

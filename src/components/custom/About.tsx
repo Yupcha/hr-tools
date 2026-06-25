@@ -41,7 +41,7 @@ export default function About() {
       <div className="flex items-center gap-3">
         <div className="flex h-12 w-12 items-center justify-center rounded-yc bg-coral text-[22px] font-bold text-white shadow-sm">h</div>
         <div>
-          <div className="text-[18px] font-bold tracking-tight text-ink">hrToolkit</div>
+          <div className="text-[18px] font-bold tracking-tight text-ink">hr-tools</div>
           <div className="text-[12.5px] text-muted">
             by <button onClick={() => openExternal(YUPCHA_URL)} className="font-semibold text-coral hover:underline">Yupcha</button>
             <span className="px-1.5 opacity-40">·</span>v{VERSION}
@@ -89,7 +89,7 @@ export default function About() {
         <FileText size={15} className="mt-0.5 shrink-0 text-teal" />
         <span>
           <strong className="text-ink">Your documents stay yours.</strong> Generated letters,
-          emails and payslips carry <strong>no hrToolkit branding</strong> — they come out as clean,
+          emails and payslips carry <strong>no hr-tools branding</strong> — they come out as clean,
           professional company documents (add your own letterhead from a saved Company profile).
         </span>
       </div>
@@ -103,9 +103,16 @@ export default function About() {
 
       <p className="text-[11.5px] leading-relaxed text-faint">
         <Arrow size={11} className="mb-0.5 mr-1 inline" />
-        hrToolkit is free and open-source under the MIT license. Statutory calculators are
+        hr-tools is free and open-source under the MIT license. Statutory calculators are
         estimates — always verify with an official source before relying on a figure.
       </p>
+
+      <div className="border-t border-hairline pt-3 text-center text-[11px] text-muted">
+        Powered by{" "}
+        <button onClick={() => openExternal(YUPCHA_URL)} className="font-semibold text-coral hover:underline">
+          Yupcha.com
+        </button>
+      </div>
     </div>
   );
 }

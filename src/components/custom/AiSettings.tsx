@@ -51,7 +51,7 @@ export default function AiSettings() {
               </span>
             </div>
             <p className="mt-1.5 max-w-md text-[13px] leading-relaxed text-muted">
-              Optional. hrToolkit is <strong>offline by default</strong>. Turn this on to draft and
+              Optional. hr-tools is <strong>offline by default</strong>. Turn this on to draft and
               extract with AI — using a <strong>local model</strong> (stays on your device) or
               <strong> your own</strong> Anthropic key.
             </p>

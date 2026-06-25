@@ -127,7 +127,7 @@ export default function Home({
         )}
 
         <footer className="mt-6 border-t border-hairline pt-5 text-center text-[12px] text-faint">
-          hrToolkit — a calm, private desk assistant. Estimates only; verify statutory figures locally.
+          hr-tools — a calm, private desk assistant. Estimates only; verify statutory figures locally.
         </footer>
       </div>
     </div>

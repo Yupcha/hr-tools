@@ -44,7 +44,7 @@ export async function aiComplete(
   opts: { system?: string; messages: { role: string; content: string }[]; maxTokens?: number },
 ): Promise<string> {
   if (!s.enabled) throw new Error("AI is off. Turn it on in AI Assist settings.");
-  if (!isDesktop()) throw new Error("AI runs only in the hrToolkit desktop app.");
+  if (!isDesktop()) throw new Error("AI runs only in the hr-tools desktop app.");
   if (s.provider === "anthropic" && !s.apiKey.trim())
     throw new Error("Add your Anthropic API key in AI Assist settings.");
 

@@ -45,6 +45,9 @@ export default function TemplateTool({
   const [letterhead, setLetterhead] = useState(false);
   // R7: Single (one person) vs Batch / mail-merge (one doc per saved Person).
   const [mode, setMode] = useState<"single" | "batch">("single");
+  // Autofill (Draft with AI + Fill from saved) now lives in a modal to keep the
+  // field list lean and give the document preview more room.
+  const [autofillOpen, setAutofillOpen] = useState(false);
 
   useEffect(() => {
     const init: Record<string, string> = {};
@@ -130,6 +133,7 @@ export default function TemplateTool({
   const Printer = getIcon("Printer");
   const UserIcon = getIcon("FileText");
   const UsersIcon = getIcon("Users");
+  const Sparkles = getIcon("Sparkles");
 
   return (
     <div className="space-y-5">
@@ -163,13 +167,38 @@ export default function TemplateTool({
           careful={careful}
         />
       ) : (
-    <div className="grid gap-6 lg:grid-cols-[minmax(280px,0.85fr)_1.15fr]">
+    <div className="grid gap-6 lg:grid-cols-[minmax(260px,0.7fr)_1.3fr]">
+      {/* Autofill — Draft with AI + Fill from saved, lifted into a modal. */}
+      <AutofillModal
+        open={autofillOpen}
+        onClose={() => setAutofillOpen(false)}
+        title={meta.title}
+        placeholders={meta.placeholders}
+        values={values}
+        onDraft={(filled) => {
+          setValues((s) => ({ ...s, ...filled }));
+          setAutofillOpen(false);
+        }}
+        onApply={(p) => {
+          applyProfile(p);
+          setAutofillOpen(false);
+        }}
+      />
+
       {/* Inputs */}
       <div className="no-print rounded-yc border border-hairline bg-surface p-5 shadow-sm">
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-4 flex items-center justify-between gap-2">
           <span className="text-[11px] font-semibold uppercase tracking-widest text-faint">
             Fields · {filled}/{meta.placeholders.length}
           </span>
+          <button
+            type="button"
+            onClick={() => setAutofillOpen(true)}
+            title="Draft with AI or fill from a saved company / person"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-yc border border-hairline bg-surface px-2.5 py-1.5 text-[11.5px] font-semibold text-body transition hover:border-coral/40 hover:text-coral"
+          >
+            <Sparkles size={13} className="text-coral" /> Autofill
+          </button>
         </div>
 
         {/* R5: register cue — quiet care panel for sensitive exits, a small warm note for happy moments. */}
@@ -178,14 +207,6 @@ export default function TemplateTool({
         ) : warm ? (
           <WarmNote />
         ) : null}
-
-        <AiDraftBar
-          title={meta.title}
-          placeholders={meta.placeholders}
-          onDraft={(filled) => setValues((s) => ({ ...s, ...filled }))}
-        />
-
-        <ProfileBar placeholders={meta.placeholders} values={values} onApply={applyProfile} />
 
         <div className="space-y-3">
           {meta.placeholders.map((p) => {
@@ -377,6 +398,78 @@ function WarmNote() {
     <div className="mb-4 flex items-center gap-2 rounded-yc border border-coral/30 bg-coral/5 px-3.5 py-2.5">
       <Heart size={14} className="shrink-0 text-coral" />
       <span className="text-[12.5px] text-body">A warm moment — make it feel personal.</span>
+    </div>
+  );
+}
+
+/** Autofill modal — lifts "Draft with AI" + "Fill from saved" out of the field
+ *  column into a focused overlay. Mirrors the CommandPalette modal look & behavior
+ *  (overlay + centered panel, closes on Esc / backdrop). The button that opens it
+ *  is always available; the panels inside decide their own emptiness. */
+function AutofillModal({
+  open, onClose, title, placeholders, values, onDraft, onApply,
+}: {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  placeholders: string[];
+  values: Record<string, string>;
+  onDraft: (filled: Record<string, string>) => void;
+  onApply: (p: Profile) => void;
+}) {
+  const [ai] = useAiSettings();
+  const X = getIcon("X");
+  const Sparkles = getIcon("Sparkles");
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  return (
+    <div
+      className="no-print fixed inset-0 z-50 flex items-start justify-center px-4 pt-[12vh]"
+      onMouseDown={onClose}
+    >
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-ink/30 backdrop-blur-sm animate-fade" />
+
+      {/* Panel */}
+      <div
+        className="relative w-full max-w-md overflow-hidden rounded-yc border border-hairline bg-surface shadow-2xl animate-pop"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center gap-2 border-b border-hairline px-4 py-3">
+          <Sparkles size={15} className="shrink-0 text-coral" />
+          <span className="text-[13.5px] font-semibold text-ink">Autofill fields</span>
+          <button
+            type="button"
+            onClick={onClose}
+            title="Close"
+            className="ml-auto inline-flex size-7 shrink-0 items-center justify-center rounded-lg text-faint transition hover:bg-soft/60 hover:text-ink"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="p-4">
+          <AiDraftBar title={title} placeholders={placeholders} onDraft={onDraft} />
+          {!ai.enabled && (
+            <p className="mb-4 text-[11.5px] leading-snug text-muted">
+              AI drafting can be enabled in Workspace → AI Assist.
+            </p>
+          )}
+          <ProfileBar placeholders={placeholders} values={values} onApply={onApply} />
+        </div>
+      </div>
     </div>
   );
 }
