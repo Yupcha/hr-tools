@@ -82,7 +82,7 @@ const CUSTOM: Tool[] = [
   { id: "lesson-planner", kind: "custom", title: "Lesson Timetable", description: "Build a class day's period schedule with breaks and lunch.", icon: "CalendarRange", audience: "teacher", keywords: "schedule periods bell timetable" },
   { id: "seating-plan", kind: "custom", title: "Seating Plan", description: "Generate and shuffle a classroom seating chart you can print.", icon: "LayoutGrid", audience: "teacher", keywords: "classroom chart students random" },
   { id: "profiles", kind: "custom", title: "Saved Profiles", description: "Save companies & people once, then auto-fill them across every letter, email and payslip.", icon: "Users", audience: "all", keywords: "company employee candidate address book autofill contacts directory" },
-  { id: "ai-settings", kind: "custom", title: "AI Assist", description: "Optional AI drafting — a local model (Ollama) or your own Anthropic key. Off by default; the app stays offline until you enable it.", icon: "Sparkles", audience: "all", keywords: "ai llm claude ollama llama draft autofill assistant settings optional offline byok" },
+  { id: "ai-settings", kind: "custom", title: "AI Assist", description: "Optional AI drafting with a local model (Ollama) on this machine. Off by default, strictly local — no cloud provider, nothing leaves your device.", icon: "Sparkles", audience: "all", keywords: "ai llm ollama llama draft autofill assistant settings optional offline local private" },
   { id: "about", kind: "custom", title: "About this project", description: "What hr-tools is, what's inside, and more from Yupcha.", icon: "Heart", audience: "all", keywords: "about info help yupcha website credits license version source github" },
 ];
 

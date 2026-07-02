@@ -3,6 +3,34 @@
 All notable changes to **hrToolkit** are documented here.
 This project adheres to [Semantic Versioning](https://semver.org).
 
+## [2.0.0] — 2026-07-02
+
+**The local-only release.** v2 removes every path by which HR data could leave the
+machine — built for teams using the app on real employee data.
+
+### Removed — cloud AI (breaking)
+- The **Anthropic Claude (BYOK)** provider is gone. AI Assist now has exactly one
+  backend: a **local model via Ollama** on this machine. If v1 stored an API key,
+  upgrading **scrubs it** from settings; users who had the cloud provider selected
+  come back with AI Assist off.
+
+### Changed — privacy hardening
+- The Rust `ai_complete` command now **refuses any endpoint that is not loopback**
+  (`localhost` / `127.0.0.1` / `[::1]`) and **disables HTTP redirects**, so a
+  tampered settings record can no longer route drafted text off-device. Covered by
+  Rust unit tests.
+- **Production CSP tightened**: dropped `'unsafe-eval'` from `script-src`, dropped the
+  Vite dev-server origins (`ws://localhost:1420`, `http://localhost:1420`) from
+  `connect-src`, added `form-action 'none'`. Dev needs live in a separate `devCsp`.
+- **Filesystem scope narrowed**: PDF saving is scoped to Desktop / Documents /
+  Downloads — the `$HOME/**` write grant is removed.
+- **Android: `allowBackup="false"`** is stamped into the generated manifest at build
+  time, so Google Auto Backup never uploads the app's data (saved profiles) to
+  Google Drive.
+- Docs (`README`, `SECURITY.md`, `docs/ARCHITECTURE.md`) rewritten to match reality,
+  including a new honest section on what stays outside the app's control on a shared
+  computer (localStorage is unencrypted at rest; synced folders; clipboard).
+
 ## [0.1.0] — 2026-06-25
 
 First release. A free, open-source, **offline-by-default** desktop app (Tauri v2 + React 19 +

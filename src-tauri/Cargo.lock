@@ -1460,7 +1460,7 @@ checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 
 [[package]]
 name = "hrtoolkit"
-version = "0.1.0"
+version = "2.0.0"
 dependencies = [
  "reqwest 0.12.28",
  "serde",
@@ -1470,6 +1470,7 @@ dependencies = [
  "tauri-plugin-dialog",
  "tauri-plugin-fs",
  "tauri-plugin-opener",
+ "url",
 ]
 
 [[package]]

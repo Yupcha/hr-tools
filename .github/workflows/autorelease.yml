@@ -143,6 +143,20 @@ jobs:
       - name: Initialize Android project
         run: bun run tauri android init
 
+      # Android defaults to allowBackup=true, which lets Google Auto Backup
+      # upload the app's data dir — including the WebView localStorage that
+      # holds saved HR profiles — to the user's Google Drive. Local-only means
+      # local-only: turn it off in the generated manifest.
+      - name: Harden Android manifest (no OS backup of HR data)
+        run: |
+          M=src-tauri/gen/android/app/src/main/AndroidManifest.xml
+          if grep -q 'android:allowBackup' "$M"; then
+            sed -i 's/android:allowBackup="true"/android:allowBackup="false"/' "$M"
+          else
+            perl -0pi -e 's/<application\b/<application android:allowBackup="false"/' "$M"
+          fi
+          grep -q 'android:allowBackup="false"' "$M" || { echo "manifest hardening failed"; cat "$M"; exit 1; }
+
       - name: Generate signing keystore
         working-directory: src-tauri/gen/android
         env:

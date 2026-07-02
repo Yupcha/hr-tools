@@ -11,36 +11,51 @@ acknowledge reports within a few days.
 
 ## Threat model
 
-hrToolkit is **offline by default**. By design it:
+hrToolkit v2 is **strictly local**. By design it:
 
-- Makes **no network requests** out of the box — no accounts, no cloud, no telemetry.
+- Makes **no network requests** out of the box — no accounts, no cloud, no telemetry,
+  and since v2 **no cloud AI provider exists in the app at all**.
 - Ships a strict **Content-Security-Policy** (`default-src 'self'`, no remote
-  origins) so the **webview** cannot exfiltrate data even if content were injected.
+  origins, no `unsafe-eval`, `form-action 'none'`) so the **webview** cannot
+  exfiltrate data even if content were injected. Dev-server origins live only in
+  `devCsp` and are not present in release builds.
 - Stores all user data in **`localStorage`** on the device; saving a PDF writes
   only to a file *you* pick via the native dialog (scoped to Desktop / Documents /
-  Downloads / Home).
+  Downloads).
 - Renders user input as text (no `innerHTML`), avoiding HTML/script injection.
+- On Android, ships with `allowBackup="false"` so the OS never uploads the app's
+  data to Google Drive backups.
 
-### The one optional network path: AI Assist
+### The one optional network path: AI Assist (local-only)
 
-AI Assist is **off by default**. When *you* turn it on (Workspace → AI Assist), the
-app can draft/extract with either a **local model** (Ollama on `localhost` — nothing
-leaves the device) or **Anthropic Claude using your own API key**. Notes:
+AI Assist is **off by default**, and in v2 its only backend is a **local model via
+Ollama on this machine**. Notes:
 
 - The request is made by the **Rust backend** (`ai_complete`), never the webview —
-  so the strict webview CSP stays in force and the egress point is auditable in one
-  place (`src-tauri/src/lib.rs`).
+  the egress point is auditable in one place (`src-tauri/src/lib.rs`).
+- The backend **refuses any endpoint that is not loopback** (`localhost`,
+  `127.0.0.1`, `[::1]`) and disables HTTP redirects — so even a tampered settings
+  record cannot route drafted HR text off the device.
 - It fires **only** when AI is enabled and you trigger a draft; nothing is sent in
   the background.
-- With **Anthropic**, only the text you draft is sent, to `api.anthropic.com`, with
-  your key (stored on-device). With **Ollama**, traffic stays on `localhost`.
+- The v1 Anthropic bring-your-own-key provider was **removed** in 2.0.0; upgrading
+  scrubs any stored API key from settings.
 
 The optional MCP server (`mcp/`) is read-only and also makes **no** network calls.
 
-Because nothing leaves the machine, the main realistic risks are local
-(supply-chain of dependencies, a malicious build). Verify releases against the
-source and prefer building from source if in doubt.
+Because nothing leaves the machine, the main realistic risks are local. Be aware of
+what remains **outside the app's control** on a shared computer:
+
+- `localStorage` (saved company/people profiles) is **not encrypted at rest** —
+  it is protected by your OS user account, so anyone who can log in as you can
+  read it. Use separate OS accounts on shared machines.
+- Exported PDFs are plain files: folders synced to iCloud/OneDrive will upload
+  them, and OS search indexes their contents.
+- "Copy" places document text on the system clipboard, which clipboard managers
+  and OS clipboard sync can capture.
+
+Verify releases against the source and prefer building from source if in doubt.
 
 ## Supported versions
 
-Pre-1.0: only the latest release receives fixes.
+Only the latest release receives fixes.

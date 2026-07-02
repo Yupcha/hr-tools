@@ -2,38 +2,50 @@ import { invoke } from "@tauri-apps/api/core";
 import { useLocalStorage } from "./useLocalStorage";
 
 /**
- * Optional, opt-in AI assist. hrToolkit is offline by default — AI is OFF until
- * the user turns it on and chooses a backend:
- *   • "ollama"    — a local model (e.g. llama3.1) on localhost; nothing leaves the device.
- *   • "anthropic" — Claude via the user's OWN API key (BYOK); the only path that
- *                   sends data off-device, and only to Anthropic, chosen explicitly.
- * The network call is made in the Rust backend (see src-tauri/src/lib.rs), so the
- * webview CSP stays locked and the key never touches the front-end network layer.
+ * Opt-in AI assist — strictly local in v2. The only backend is an Ollama model
+ * running on this machine; the Rust command additionally refuses any endpoint
+ * that is not loopback (see src-tauri/src/lib.rs), so HR data cannot leave the
+ * device through this feature even if the stored settings are tampered with.
+ * The v1 cloud provider (Anthropic BYOK) was removed in 2.0.0.
  */
-export type AiProvider = "ollama" | "anthropic";
-
 export interface AiSettings {
   enabled: boolean;
-  provider: AiProvider;
   model: string;
-  apiKey: string; // Anthropic BYOK key, stored on-device only
-  endpoint: string; // Ollama base URL
+  endpoint: string; // Ollama base URL — loopback only, enforced in Rust
 }
 
-export const DEFAULT_MODEL: Record<AiProvider, string> = {
-  ollama: "llama3.1",
-  anthropic: "claude-opus-4-8",
-};
+export const DEFAULT_MODEL = "llama3.1";
 
 export const DEFAULT_AI: AiSettings = {
   enabled: false,
-  provider: "ollama",
-  model: DEFAULT_MODEL.ollama,
-  apiKey: "",
+  model: DEFAULT_MODEL,
   endpoint: "http://localhost:11434",
 };
 
-export const useAiSettings = () => useLocalStorage<AiSettings>("hrt.ai", DEFAULT_AI);
+const AI_KEY = "hrt.ai";
+
+/** v1 records carried a cloud provider and a BYOK API key. Scrub the key and
+ *  collapse the record to what v2 can honour; cloud users drop back to "off". */
+function migrateV1() {
+  try {
+    const raw = localStorage.getItem(AI_KEY);
+    if (!raw) return;
+    const v1 = JSON.parse(raw) as Partial<AiSettings> & { provider?: string; apiKey?: string };
+    if (v1.provider === undefined && v1.apiKey === undefined) return;
+    const wasCloud = v1.provider === "anthropic";
+    const v2: AiSettings = {
+      enabled: !wasCloud && Boolean(v1.enabled),
+      model: !wasCloud && v1.model ? v1.model : DEFAULT_MODEL,
+      endpoint: typeof v1.endpoint === "string" && v1.endpoint.trim() ? v1.endpoint : DEFAULT_AI.endpoint,
+    };
+    localStorage.setItem(AI_KEY, JSON.stringify(v2));
+  } catch {
+    /* corrupted or unavailable storage — the hook falls back to defaults */
+  }
+}
+if (typeof window !== "undefined") migrateV1();
+
+export const useAiSettings = () => useLocalStorage<AiSettings>(AI_KEY, DEFAULT_AI);
 
 export const isDesktop = () =>
   typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -45,17 +57,13 @@ export async function aiComplete(
 ): Promise<string> {
   if (!s.enabled) throw new Error("AI is off. Turn it on in AI Assist settings.");
   if (!isDesktop()) throw new Error("AI runs only in the hr-tools desktop app.");
-  if (s.provider === "anthropic" && !s.apiKey.trim())
-    throw new Error("Add your Anthropic API key in AI Assist settings.");
 
   return invoke<string>("ai_complete", {
     req: {
-      provider: s.provider,
       model: s.model,
       system: opts.system ?? null,
       messages: opts.messages,
-      api_key: s.provider === "anthropic" ? s.apiKey : null,
-      endpoint: s.provider === "ollama" ? s.endpoint : null,
+      endpoint: s.endpoint,
       max_tokens: opts.maxTokens ?? 2048,
     },
   });

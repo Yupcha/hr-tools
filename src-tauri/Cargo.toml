@@ -1,6 +1,6 @@
 [package]
 name = "hrtoolkit"
-version = "0.1.0"
+version = "2.0.0"
 description = "Free, offline desktop toolkit for recruiters, HR teams and teachers."
 authors = ["Yupcha"]
 license = "MIT"
@@ -29,4 +29,5 @@ serde_json = "1"
 # rustls (not native-tls/OpenSSL) so the AI backend cross-compiles to Android
 # and needs no system OpenSSL on any desktop platform.
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "http2"] }
+url = "2"
 

@@ -1,10 +1,7 @@
 import { useState } from "react";
 import { getIcon } from "../../lib/icons";
 import { cn } from "../../lib/useLocalStorage";
-import {
-  DEFAULT_MODEL, aiComplete, isDesktop, useAiSettings,
-  type AiProvider,
-} from "../../lib/ai";
+import { DEFAULT_MODEL, aiComplete, isDesktop, useAiSettings } from "../../lib/ai";
 
 export default function AiSettings() {
   const [s, setS] = useAiSettings();
@@ -15,9 +12,6 @@ export default function AiSettings() {
   const Shield = getIcon("ShieldCheck");
   const Check = getIcon("Check");
   const X = getIcon("X");
-
-  const setProvider = (provider: AiProvider) =>
-    setS((p) => ({ ...p, provider, model: DEFAULT_MODEL[provider] }));
 
   const test = async () => {
     setTesting(true);
@@ -52,8 +46,8 @@ export default function AiSettings() {
             </div>
             <p className="mt-1.5 max-w-md text-[13px] leading-relaxed text-muted">
               Optional. hr-tools is <strong>offline by default</strong>. Turn this on to draft and
-              extract with AI — using a <strong>local model</strong> (stays on your device) or
-              <strong> your own</strong> Anthropic key.
+              extract with a <strong>local model</strong> via Ollama — v2 is strictly local, so
+              there is no cloud provider and nothing can leave this machine.
             </p>
           </div>
           <button
@@ -67,45 +61,24 @@ export default function AiSettings() {
         </div>
       </div>
 
-      {/* Provider + config */}
+      {/* Local model config */}
       <div className={cn("rounded-yc border border-hairline bg-surface p-5 shadow-sm transition", !s.enabled && "pointer-events-none opacity-50")}>
-        <div className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-faint">Provider</div>
-        <div className="mb-4 grid grid-cols-2 gap-2">
-          {([
-            { id: "ollama", title: "Local (Ollama)", sub: "Private · on-device" },
-            { id: "anthropic", title: "Anthropic Claude", sub: "Your API key · cloud" },
-          ] as const).map((opt) => (
-            <button
-              key={opt.id}
-              onClick={() => setProvider(opt.id)}
-              className={cn(
-                "rounded-yc border p-3 text-left transition",
-                s.provider === opt.id ? "border-coral bg-coral-soft" : "border-hairline hover:border-ink/20",
-              )}
-            >
-              <div className="text-[13px] font-semibold text-ink">{opt.title}</div>
-              <div className="text-[11.5px] text-muted">{opt.sub}</div>
-            </button>
-          ))}
-        </div>
+        <div className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-faint">Local model (Ollama)</div>
 
         <label className="mb-3 block">
           <span className="mb-1 block text-[12px] font-medium text-body">Model</span>
-          <input className={field} value={s.model} onChange={(e) => setS((p) => ({ ...p, model: e.target.value }))} placeholder={DEFAULT_MODEL[s.provider]} />
+          <input className={field} value={s.model} onChange={(e) => setS((p) => ({ ...p, model: e.target.value }))} placeholder={DEFAULT_MODEL} />
         </label>
 
-        {s.provider === "anthropic" ? (
-          <label className="block">
-            <span className="mb-1 block text-[12px] font-medium text-body">Anthropic API key (kept on this device)</span>
-            <input className={cn(field, "font-mono")} type="password" value={s.apiKey} onChange={(e) => setS((p) => ({ ...p, apiKey: e.target.value }))} placeholder="sk-ant-…" />
-          </label>
-        ) : (
-          <label className="block">
-            <span className="mb-1 block text-[12px] font-medium text-body">Ollama endpoint</span>
-            <input className={field} value={s.endpoint} onChange={(e) => setS((p) => ({ ...p, endpoint: e.target.value }))} placeholder="http://localhost:11434" />
-            <span className="mt-1 block text-[11px] text-faint">Install Ollama and run e.g. <span className="font-mono">ollama pull llama3.1</span>.</span>
-          </label>
-        )}
+        <label className="block">
+          <span className="mb-1 block text-[12px] font-medium text-body">Ollama endpoint (this machine only)</span>
+          <input className={field} value={s.endpoint} onChange={(e) => setS((p) => ({ ...p, endpoint: e.target.value }))} placeholder="http://localhost:11434" />
+          <span className="mt-1 block text-[11px] text-faint">
+            Install Ollama and run e.g. <span className="font-mono">ollama pull llama3.1</span>.
+            Only <span className="font-mono">localhost</span> / <span className="font-mono">127.0.0.1</span> endpoints
+            are accepted — remote URLs are refused by the app.
+          </span>
+        </label>
 
         <div className="mt-4 flex items-center gap-3">
           <button
@@ -127,10 +100,9 @@ export default function AiSettings() {
       <div className="flex items-start gap-2 rounded-yc border border-hairline bg-soft/40 px-4 py-3 text-[12px] leading-relaxed text-muted">
         <Shield size={15} className="mt-0.5 shrink-0 text-teal" />
         <span>
-          Requests are made by the app's Rust backend, not the web layer — the strict offline
-          security policy stays in force. With <strong>Local (Ollama)</strong> nothing leaves your
-          machine. With <strong>Anthropic</strong>, only the text you draft is sent, to Anthropic,
-          using your own key. {isDesktop() ? "" : "AI requires the desktop app."}
+          Requests are made by the app's Rust backend, not the web layer, and the backend refuses
+          any endpoint that isn't this machine — so with AI on or off, your HR data never leaves
+          your device. {isDesktop() ? "" : "AI requires the desktop app."}
         </span>
       </div>
     </div>

@@ -1,9 +1,11 @@
 # Architecture
 
 hrToolkit is a **Tauri v2** desktop app with a **React + TypeScript** frontend styled with
-**Tailwind CSS v4**. There is intentionally **no backend, no network access and no telemetry** —
-every tool runs locally in the webview, and all state lives in `localStorage`. The Rust side is the
-stock Tauri shell; all logic is in the frontend.
+**Tailwind CSS v4**. There is intentionally **no server backend and no telemetry** — every tool
+runs locally in the webview, and all state lives in `localStorage`. The Rust side is the Tauri
+shell plus a single custom command, `ai_complete` (`src-tauri/src/lib.rs`): the app's only
+network code, used by the opt-in AI Assist, and since v2 it refuses any endpoint that is not
+loopback — so even that path cannot reach beyond this machine.
 
 ```
 hrToolkit/
