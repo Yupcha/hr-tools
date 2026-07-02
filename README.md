@@ -36,6 +36,12 @@ working with real employee data:
 - **Android:** OS backup of app data is disabled, so saved HR profiles never land in Google Drive.
 - Honest docs: [SECURITY.md](./SECURITY.md) now spells out exactly what stays on your machine — and what your OS does around it.
 
+And in **v2.1**:
+
+- 🔐 **App Lock** — optional passphrase encryption at rest (AES-256) for saved profiles; asked once per launch, unrecoverable by design.
+- 📱 **Mobile-responsive UI** — the sidebar becomes a drawer on phones and layouts fit narrow screens, so the Android build is genuinely usable.
+- 🔏 **Stable APK signing** — Android releases now update in place instead of requiring uninstall/reinstall.
+
 Full details in the [CHANGELOG](./CHANGELOG.md).
 
 ## Why hrToolkit?
@@ -94,9 +100,9 @@ Grab the latest build for your OS from the [**Releases**](https://github.com/Yup
 > - **Windows:** **More info** → **Run anyway** on the SmartScreen prompt.
 > - **Android:** enable **Install unknown apps** for your browser/file manager, then open the `.apk`.
 >
-> ⚠️ **Android is experimental.** The UI is currently optimised for desktop, so on a
-> phone it will feel cramped until a mobile-responsive pass lands. It installs and runs,
-> but desktop is the recommended experience for now.
+> ℹ️ **Android:** responsive since v2.1 — the sidebar becomes a drawer and layouts fit
+> phone screens. Desktop remains the richest experience (⌘K palette, keyboard-first),
+> but the APK is now genuinely usable day-to-day.
 >
 > It's safe — the source is right here and the app is **offline by default** (the only optional network path is opt-in [AI Assist](#-ai-assist--agentic-use-optional)). Prefer to build it yourself? See [Develop](#-develop).
 
@@ -199,7 +205,7 @@ and ship with a test in `src/data/calculators.test.ts`.
 
 **Where is my data stored?** Locally, in the app's storage on your device. Nothing is uploaded — there is no server to upload to.
 
-**Is it safe for real employee data / GDPR?** The app itself never transmits or collects anything, which removes the usual processor/sub-processor questions — your data stays on hardware you control. Saved profiles are protected by your OS user account (not additionally encrypted), so use separate OS accounts on shared machines. See [SECURITY.md](./SECURITY.md) for the full threat model.
+**Is it safe for real employee data / GDPR?** The app itself never transmits or collects anything, which removes the usual processor/sub-processor questions — your data stays on hardware you control. On shared machines, turn on **App Lock** (v2.1+): it encrypts saved profiles at rest with AES-256 under a passphrase asked once per launch. See [SECURITY.md](./SECURITY.md) for the full threat model.
 
 **Can the AI feature leak my data?** No. Since v2 the only AI backend is a local Ollama model; the app rejects any non-`localhost` endpoint at the Rust layer, disables redirects and ignores system proxies. There is no API-key field anymore.
 

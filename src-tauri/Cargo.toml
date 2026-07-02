@@ -1,6 +1,6 @@
 [package]
 name = "hrtoolkit"
-version = "2.0.0"
+version = "2.1.0"
 description = "Free, offline desktop toolkit for recruiters, HR teams and teachers."
 authors = ["Yupcha"]
 license = "MIT"

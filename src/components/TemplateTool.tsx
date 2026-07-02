@@ -167,7 +167,7 @@ export default function TemplateTool({
           careful={careful}
         />
       ) : (
-    <div className="grid gap-6 lg:grid-cols-[minmax(260px,0.7fr)_1.3fr]">
+    <div className="grid gap-6 lg:grid-cols-[minmax(260px,0.7fr)_1.3fr] [&>*]:min-w-0">
       {/* Autofill — Draft with AI + Fill from saved, lifted into a modal. */}
       <AutofillModal
         open={autofillOpen}

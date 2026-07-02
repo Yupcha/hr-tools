@@ -12,6 +12,7 @@ import SeatingPlan from "./custom/SeatingPlan";
 import Profiles from "./custom/Profiles";
 import AiSettings from "./custom/AiSettings";
 import About from "./custom/About";
+import PrivacyLock from "./custom/PrivacyLock";
 
 /** One-shot seed passed in when a tool is opened "about a person". */
 export type Prefill = Record<string, string> | null;
@@ -35,6 +36,7 @@ const CUSTOM: Record<string, React.FC<CustomProps>> = {
   "profiles": Profiles,
   "ai-settings": AiSettings,
   "about": About,
+  "privacy-lock": PrivacyLock,
 };
 
 export default function ToolView({

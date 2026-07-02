@@ -46,9 +46,12 @@ The optional MCP server (`mcp/`) is read-only and also makes **no** network call
 Because nothing leaves the machine, the main realistic risks are local. Be aware of
 what remains **outside the app's control** on a shared computer:
 
-- `localStorage` (saved company/people profiles) is **not encrypted at rest** —
-  it is protected by your OS user account, so anyone who can log in as you can
-  read it. Use separate OS accounts on shared machines.
+- Saved company/people profiles are protected by your OS user account by
+  default. For shared machines, turn on **App Lock** (My Workspace → App Lock,
+  since v2.1): it encrypts the profile store at rest with AES-256-GCM under a
+  PBKDF2-derived passphrase key, asked once per launch. The passphrase is never
+  stored and is unrecoverable by design — the only escape is an explicit,
+  typed-confirmation erase of the saved profiles.
 - Exported PDFs are plain files: folders synced to iCloud/OneDrive will upload
   them, and OS search indexes their contents.
 - "Copy" places document text on the system clipboard, which clipboard managers

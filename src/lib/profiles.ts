@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useLocalStorage } from "./useLocalStorage";
+import { useVault } from "./lock";
 
 /**
  * Shared, on-device "address book" for hrToolkit. Save a Company or a Person
@@ -141,9 +141,10 @@ export function personActions(
     .filter(({ seed }) => Object.keys(seed).length > 0);
 }
 
-/** Persisted CRUD over the saved profiles. */
+/** Persisted CRUD over the saved profiles — backed by the App Lock vault, so
+ *  the store is transparently encrypted at rest when a passphrase is set. */
 export function useProfiles() {
-  const [profiles, setProfiles] = useLocalStorage<Profile[]>("hrt.profiles", []);
+  const { profiles, setProfiles } = useVault();
 
   const upsert = useCallback(
     (p: Profile) =>

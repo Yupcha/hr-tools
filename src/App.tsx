@@ -4,6 +4,8 @@ import ToolView from "./components/ToolView";
 import Home from "./components/Home";
 import CommandPalette from "./components/CommandPalette";
 import OfflineBadge from "./components/OfflineBadge";
+import LockScreen from "./components/LockScreen";
+import { useVault } from "./lib/lock";
 import { TOOL_BY_ID, GROUP_BY_TOOL } from "./data/catalog";
 import { regionById, type RegionId } from "./lib/regions";
 import { getIcon } from "./lib/icons";
@@ -15,7 +17,11 @@ export default function App() {
   const [region, setRegion] = useLocalStorage<RegionId>("hrt.region", "IN");
   const [favorites, setFavorites] = useLocalStorage<string[]>("hrt.favorites", []);
   const [recents, setRecents] = useLocalStorage<string[]>("hrt.recents", []);
-  const [sidebarOpen, setSidebarOpen] = useLocalStorage<boolean>("hrt.sidebar", true);
+  // Desktop starts with the sidebar; phones start with the tool area (drawer).
+  const [sidebarOpen, setSidebarOpen] = useLocalStorage<boolean>(
+    "hrt.sidebar",
+    typeof window === "undefined" || window.innerWidth >= 768,
+  );
   const [paletteOpen, setPaletteOpen] = useState(false);
   // Transient, NON-persisted "person → document" seed. Consumed once by the
   // opened tool, then cleared. This is the whole person-as-hero channel.
@@ -34,6 +40,8 @@ export default function App() {
   // existing single-arg callers still type-check (seed defaults to undefined).
   const select = (id: string, seed?: Record<string, string>) => {
     setPrefill(seed ?? null);
+    // On phones the sidebar is an overlay drawer — close it so the tool shows.
+    if (typeof window !== "undefined" && window.innerWidth < 768) setSidebarOpen(false);
     if (!id) {
       setActiveId(null); // home
       return;
@@ -93,23 +101,37 @@ export default function App() {
   const group = tool ? GROUP_BY_TOOL[tool.id] : null;
   const fav = tool ? favorites.includes(tool.id) : false;
 
+  // App Lock gate — nothing (tools, search, palette) mounts until unlocked.
+  const { locked } = useVault();
+  if (locked) return <LockScreen />;
+
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-canvas text-body">
       {sidebarOpen && (
-        <Sidebar
-          activeId={activeId}
-          onSelect={select}
-          region={region}
-          onRegion={setRegion}
-          favorites={favorites}
-          onToggleFav={toggleFav}
-          theme={theme}
-          onToggleTheme={toggleTheme}
-          onOpenPalette={() => setPaletteOpen(true)}
-          onCollapse={() => setSidebarOpen(false)}
-          searchRef={searchRef}
-          mac={mac}
-        />
+        <>
+          {/* Phone: the sidebar floats as a drawer — tap the scrim to dismiss. */}
+          <div
+            className="no-print fixed inset-0 z-30 bg-ink/30 md:hidden"
+            onClick={() => setSidebarOpen(false)}
+            aria-hidden
+          />
+          <div className="fixed inset-y-0 left-0 z-40 h-full bg-canvas shadow-xl md:static md:z-auto md:bg-transparent md:shadow-none">
+            <Sidebar
+              activeId={activeId}
+              onSelect={select}
+              region={region}
+              onRegion={setRegion}
+              favorites={favorites}
+              onToggleFav={toggleFav}
+              theme={theme}
+              onToggleTheme={toggleTheme}
+              onOpenPalette={() => setPaletteOpen(true)}
+              onCollapse={() => setSidebarOpen(false)}
+              searchRef={searchRef}
+              mac={mac}
+            />
+          </div>
+        </>
       )}
 
       <main className="relative flex h-full min-w-0 flex-1 flex-col">
@@ -126,7 +148,7 @@ export default function App() {
 
         {tool ? (
           <>
-            <header className={cn("no-print flex items-center gap-3 border-b border-hairline bg-surface/70 py-3.5 pr-6 backdrop-blur", sidebarOpen ? "pl-6" : "pl-14")}>
+            <header className={cn("no-print flex items-center gap-3 border-b border-hairline bg-surface/70 py-3.5 pr-4 backdrop-blur sm:pr-6", sidebarOpen ? "pl-4 sm:pl-6 md:pl-6" : "pl-14")}>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-faint">
                   {group?.label}
@@ -151,7 +173,7 @@ export default function App() {
               </button>
             </header>
 
-            <div className="scroll flex-1 overflow-y-auto px-6 py-6">
+            <div className="scroll flex-1 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6">
               <p className="no-print mb-5 max-w-3xl text-[14px] leading-relaxed text-muted">{tool.description}</p>
               <ToolView
                 tool={tool}

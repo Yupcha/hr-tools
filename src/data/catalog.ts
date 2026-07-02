@@ -84,6 +84,8 @@ const CUSTOM: Tool[] = [
   { id: "profiles", kind: "custom", title: "Saved Profiles", description: "Save companies & people once, then auto-fill them across every letter, email and payslip.", icon: "Users", audience: "all", keywords: "company employee candidate address book autofill contacts directory" },
   { id: "ai-settings", kind: "custom", title: "AI Assist", description: "Optional AI drafting with a local model (Ollama) on this machine. Off by default, strictly local — no cloud provider, nothing leaves your device.", icon: "Sparkles", audience: "all", keywords: "ai llm ollama llama draft autofill assistant settings optional offline local private" },
   { id: "about", kind: "custom", title: "About this project", description: "What hr-tools is, what's inside, and more from Yupcha.", icon: "Heart", audience: "all", keywords: "about info help yupcha website credits license version source github" },
+  // Appended last so the CUSTOM[n] index references above stay stable.
+  { id: "privacy-lock", kind: "custom", title: "App Lock", description: "Encrypt saved profiles on this device with a passphrase — AES-256 at rest, asked once per launch.", icon: "KeyRound", audience: "all", keywords: "app lock passphrase password encrypt encryption security privacy vault protect pin at rest" },
 ];
 
 /* ── Build template tools from the registry, grouped by tab + category ── */
@@ -112,7 +114,7 @@ export const NAV: NavGroup[] = [
     id: "workspace",
     label: "My Workspace",
     icon: "Users",
-    tools: [CUSTOM[6], CUSTOM[7]], // Saved Profiles + AI Assist (optional)
+    tools: [CUSTOM[6], CUSTOM[7], CUSTOM[9]], // Saved Profiles + AI Assist + App Lock
   },
   {
     id: "letters",

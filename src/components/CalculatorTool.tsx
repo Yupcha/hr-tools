@@ -115,7 +115,7 @@ export default function CalculatorTool({
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_1.05fr]">
+      <div className="grid gap-6 lg:grid-cols-[1fr_1.05fr] [&>*]:min-w-0">
         {/* Inputs */}
         <div className="rounded-yc border border-hairline bg-surface p-5 shadow-sm">
         <div className="mb-4 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-faint">

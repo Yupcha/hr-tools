@@ -67,9 +67,62 @@ jobs:
           prerelease: false
           args: ${{ matrix.args }}
 
+  # ── Rich release notes on the draft (same format as autorelease) ──────────
+  notes:
+    needs: desktop
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compose and publish release notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          BASE=$(node -p "require('./package.json').version.split('.').slice(0,2).join('.')")
+          PREV=$(gh release list --exclude-drafts --limit 10 --json tagName --jq '.[].tagName' \
+                 | grep -v "^$TAG\$" | head -n 1 || true)
+          {
+            echo "**Free, open-source, 100% offline HR toolkit — nothing leaves your machine.**"
+            echo
+            awk -v ver="$BASE" '
+              index($0, "## [" ver) == 1 { on = 1; next }
+              /^## \[/ && on { exit }
+              on { print }
+            ' CHANGELOG.md
+            echo
+            echo "### 📦 Which file do I download?"
+            echo
+            echo "| You're on | Grab |"
+            echo "| --- | --- |"
+            echo "| **macOS** (M1/M2/M3/M4) | \`…_aarch64.dmg\` |"
+            echo "| **macOS** (Intel) | \`…_x64.dmg\` |"
+            echo "| **Windows** | \`…_x64-setup.exe\` (or \`.msi\`) |"
+            echo "| **Linux** | \`.AppImage\` (portable) · \`.deb\` · \`.rpm\` |"
+            echo "| **Android** (sideload) | \`…-android.apk\` |"
+            echo
+            echo "> **First launch:** builds are unsigned (no paid certificate). macOS: right-click → Open → Open. Windows: More info → Run anyway. Android: allow *Install unknown apps*."
+            echo
+            if [ -n "$PREV" ]; then
+              echo "### 🔀 Commits since $PREV"
+              echo
+              git log --no-merges --pretty='- %s (%h)' "$PREV"..HEAD -- . | head -n 40
+              N=$(git rev-list --no-merges --count "$PREV"..HEAD)
+              [ "$N" -gt 40 ] && echo "- …and $((N - 40)) more"
+              echo
+              echo "**Full diff:** https://github.com/$REPO/compare/$PREV...$TAG"
+            fi
+          } > notes.md
+          gh release edit "$TAG" --notes-file notes.md
+
   # ── Mobile: Android APK ───────────────────────────────────────────────────
-  # The Android project (gen/android) is generated fresh in CI. The APK is a
-  # debug-signed, installable sideload build — no keystore secrets required.
+  # The Android project (gen/android) is generated fresh in CI. The APK is
+  # signed with the persistent keystore from repo secrets when present
+  # (stable update identity), else a throwaway sideload key.
   # For Play Store / stable cross-version update signing, add your own keystore
   # (see the commented "release signing" notes below).
   android:
@@ -124,18 +177,24 @@ jobs:
           fi
           grep -q 'android:allowBackup="false"' "$M" || { echo "manifest hardening failed"; cat "$M"; exit 1; }
 
-      # Generate a signing keystore (from the ANDROID_KEYSTORE_PASSWORD secret if
-      # set, else a default for sideload builds). For Play Store / stable
-      # cross-version update signing, set that secret to your own key's password
-      # and commit your keystore via a secret instead.
-      - name: Generate signing keystore
+      # Use the persistent signing key from repo secrets so every release is
+      # signed by the same identity and APKs update in place. Forks without the
+      # secrets fall back to a throwaway key (sideload-only, no continuity).
+      - name: Provision signing keystore
         working-directory: src-tauri/gen/android
         env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
           KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD || 'hrtoolkit-sideload' }}
         run: |
-          keytool -genkeypair -v -keystore keystore.jks -keyalg RSA -keysize 2048 \
-            -validity 10000 -alias hrtoolkit -storepass "$KS_PASS" -keypass "$KS_PASS" \
-            -dname "CN=hr-tools, O=Yupcha, C=US"
+          if [ -n "$KS_B64" ]; then
+            echo "$KS_B64" | base64 -d > keystore.jks
+            echo "Using persistent keystore from secrets"
+          else
+            keytool -genkeypair -v -keystore keystore.jks -keyalg RSA -keysize 2048 \
+              -validity 10000 -alias hrtoolkit -storepass "$KS_PASS" -keypass "$KS_PASS" \
+              -dname "CN=hr-tools, O=Yupcha, C=US"
+            echo "::warning::No ANDROID_KEYSTORE_B64 secret — APK signed with a throwaway key"
+          fi
 
       - name: Build release APK (stripped & optimised)
         run: bun run tauri android build --apk

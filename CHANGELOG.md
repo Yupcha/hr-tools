@@ -3,6 +3,32 @@
 All notable changes to **hrToolkit** are documented here.
 This project adheres to [Semantic Versioning](https://semver.org).
 
+## [2.1.0] — 2026-07-02
+
+### Added — App Lock 🔐
+- **Optional passphrase encryption at rest** for Saved Profiles (the store holding
+  names, salaries and contacts). AES-256-GCM with a PBKDF2-derived key (310k
+  iterations), all via WebCrypto — no new dependencies, still zero network. With
+  the lock on, the app asks for the passphrase once per launch and the roster on
+  disk is unreadable without it. Includes change-passphrase, turn-off (decrypts
+  back), and an explicit typed-confirmation erase as the only recovery path.
+  Find it under **My Workspace → App Lock**.
+
+### Added — phones are first-class now 📱
+- Full **mobile-responsive pass**: the sidebar becomes an off-canvas drawer with a
+  scrim below 768px (auto-closes after you pick a tool), tool layouts and the
+  letter preview no longer overflow narrow screens, and paddings tighten on small
+  viewports. The Android build stops feeling like a shrunken desktop.
+
+### Changed — release pipeline
+- **Stable Android signing:** releases are now signed with a persistent keystore
+  (from repo secrets), so APK updates install over the old version instead of
+  demanding an uninstall that wiped your saved data. Forks without secrets still
+  build with a throwaway key.
+- **Rich release notes:** every release now carries the matching CHANGELOG
+  section, a which-file-do-I-download table, first-launch instructions and the
+  commit log since the previous release.
+
 ## [2.0.0] — 2026-07-02
 
 **The local-only release.** v2 removes every path by which HR data could leave the

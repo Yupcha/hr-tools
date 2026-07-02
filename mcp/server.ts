@@ -23,7 +23,7 @@ const text = (s: string) => ({ content: [{ type: "text" as const, text: s }] });
 const fill = (template: string, values: Record<string, string>) =>
   template.replace(/\[(.*?)\]/g, (_, key) => values[key]?.trim() || `[${key}]`);
 
-const server = new McpServer({ name: "hrtoolkit", version: "2.0.0" });
+const server = new McpServer({ name: "hrtoolkit", version: "2.1.0" });
 
 // 1) Discovery — what can this toolkit do?
 server.tool(
